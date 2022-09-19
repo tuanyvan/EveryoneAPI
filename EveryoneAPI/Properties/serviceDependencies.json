@@ -1,12 +1,12 @@
 {
   "dependencies": {
-    "secrets1": {
-      "type": "secrets",
-      "connectionId": "EveryoneKeyVault"
-    },
     "mssql1": {
       "type": "mssql",
       "connectionId": "ConnectionStrings:EveryoneDB"
+    },
+    "secrets1": {
+      "type": "secrets",
+      "connectionId": "EveryoneKeyVault"
     }
   }
 }
