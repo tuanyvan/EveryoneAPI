@@ -1,5 +1,7 @@
 using Microsoft.OpenApi.Models;
 using Azure.Identity;
+using Microsoft.EntityFrameworkCore;
+using EveryoneAPI.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +17,8 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("api", new OpenApiInfo { Title = "Everyone API", Version = "v1.0" });
 });
+
+builder.Services.AddScoped<EveryoneDBContext>();
 
 var app = builder.Build();
 
