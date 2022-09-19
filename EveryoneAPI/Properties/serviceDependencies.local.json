@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "secrets1": {
+      "secretStore": null,
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.KeyVault/vaults/EveryoneAPIVault",
+      "type": "secrets.keyVault",
+      "connectionId": "EveryoneKeyVault"
+    },
+    "mssql1": {
+      "secretStore": "AzureKeyVault",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/everyone-sql-db/databases/EveryoneDB",
+      "type": "mssql.azure",
+      "connectionId": "ConnectionStrings:EveryoneDB"
+    }
+  }
+}

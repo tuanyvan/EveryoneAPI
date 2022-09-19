@@ -1,6 +1,10 @@
 using Microsoft.OpenApi.Models;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var keyVaultEndpoint = new Uri(Environment.GetEnvironmentVariable("EveryoneKeyVault"));
+builder.Configuration.AddAzureKeyVault(keyVaultEndpoint, new DefaultAzureCredential());
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -15,7 +19,6 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-Console.WriteLine(app.Environment.IsDevelopment());
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
