@@ -22,13 +22,15 @@ namespace EveryoneAPI.Models
         public virtual DbSet<Ethnicity> Ethnicities { get; set; } = null!;
         public virtual DbSet<GenderIdentity> GenderIdentities { get; set; } = null!;
         public virtual DbSet<Pod> Pods { get; set; } = null!;
+        public virtual DbSet<Pronoun> Pronouns { get; set; } = null!;
         public virtual DbSet<SexualOrientation> SexualOrientations { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer(Environment.GetEnvironmentVariable("ConnectionStrings--EveryoneDb"));
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseSqlServer("Data Source=tcp:everyone-sql-db.database.windows.net,1433;Initial Catalog=EveryoneDB;User Id=everyonedb@everyone-sql-db;Password=kMj5cRqLEXKDnHb");
             }
         }
 
@@ -85,6 +87,12 @@ namespace EveryoneAPI.Models
                     .HasForeignKey(d => d.PodId)
                     .HasConstraintName("FK_Employees_Pods");
 
+                entity.HasOne(d => d.PronounNavigation)
+                    .WithMany(p => p.Employees)
+                    .HasForeignKey(d => d.Pronoun)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Employees_Pronouns");
+
                 entity.HasOne(d => d.SexualOrientationNavigation)
                     .WithMany(p => p.Employees)
                     .HasForeignKey(d => d.SexualOrientation)
@@ -136,6 +144,15 @@ namespace EveryoneAPI.Models
                     .HasForeignKey(d => d.DepartmentId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Pods_Departments");
+            });
+
+            modelBuilder.Entity<Pronoun>(entity =>
+            {
+                entity.Property(e => e.PronounId).ValueGeneratedNever();
+
+                entity.Property(e => e.Name)
+                    .HasMaxLength(10)
+                    .IsFixedLength();
             });
 
             modelBuilder.Entity<SexualOrientation>(entity =>

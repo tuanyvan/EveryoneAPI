@@ -13,12 +13,14 @@ namespace EveryoneAPI.Models
         public int EmployerId { get; set; }
         public int? DepartmentId { get; set; }
         public int? PodId { get; set; }
+        public int Pronoun { get; set; }
 
         public virtual Department? Department { get; set; }
         public virtual Employer Employer { get; set; } = null!;
         public virtual Ethnicity EthnicityNavigation { get; set; } = null!;
         public virtual GenderIdentity GenderIdentityNavigation { get; set; } = null!;
         public virtual Pod? Pod { get; set; }
+        public virtual Pronoun PronounNavigation { get; set; } = null!;
         public virtual SexualOrientation SexualOrientationNavigation { get; set; } = null!;
     }
 }
