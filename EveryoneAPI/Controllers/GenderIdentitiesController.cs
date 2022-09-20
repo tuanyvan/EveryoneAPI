@@ -23,7 +23,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-              return View(await _context.GenderIdentities.ToListAsync());
+              return Json(await _context.GenderIdentities.ToListAsync());
         }
 
         private bool GenderIdentityExists(int id)

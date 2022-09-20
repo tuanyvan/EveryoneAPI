@@ -25,7 +25,7 @@ namespace EveryoneAPI.Controllers
         public async Task<IActionResult> Index()
         {
             var everyoneDBContext = _context.Pods.Include(p => p.Department);
-            return View(await everyoneDBContext.ToListAsync());
+            return Json(await everyoneDBContext.ToListAsync());
         }
 
         // GET: Pods/Details/5
@@ -46,7 +46,7 @@ namespace EveryoneAPI.Controllers
                 return NotFound();
             }
 
-            return View(pod);
+            return Json(pod);
         }
 
         // POST: Pods/Create
@@ -64,7 +64,7 @@ namespace EveryoneAPI.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["DepartmentId"] = new SelectList(_context.Departments, "DepartmentId", "DepartmentId", pod.DepartmentId);
-            return View(pod);
+            return Json(pod);
         }
 
         // POST: Pods/Edit/5
@@ -101,7 +101,7 @@ namespace EveryoneAPI.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["DepartmentId"] = new SelectList(_context.Departments, "DepartmentId", "DepartmentId", pod.DepartmentId);
-            return View(pod);
+            return Json(pod);
         }
 
         // POST: Pods/Delete/5

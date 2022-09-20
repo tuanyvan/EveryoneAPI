@@ -24,7 +24,7 @@ namespace EveryoneAPI.Controllers
         public async Task<IActionResult> Index()
         {
             var everyoneDBContext = _context.Departments.Include(d => d.Employer);
-            return View(await everyoneDBContext.ToListAsync());
+            return Json(await everyoneDBContext.ToListAsync());
         }
 
         // GET: Departments/Details/5
@@ -45,7 +45,7 @@ namespace EveryoneAPI.Controllers
                 return NotFound();
             }
 
-            return View(department);
+            return Json(department);
         }
 
         // POST: Departments/Create
@@ -63,7 +63,7 @@ namespace EveryoneAPI.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["EmployerId"] = new SelectList(_context.Employers, "EmployerId", "EmployerId", department.EmployerId);
-            return View(department);
+            return Json(department);
         }
 
         // POST: Departments/Edit/5
@@ -100,7 +100,7 @@ namespace EveryoneAPI.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewData["EmployerId"] = new SelectList(_context.Employers, "EmployerId", "EmployerId", department.EmployerId);
-            return View(department);
+            return Json(department);
         }
 
         // POST: Departments/Delete/5

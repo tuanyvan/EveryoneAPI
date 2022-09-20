@@ -23,7 +23,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-              return View(await _context.SexualOrientations.ToListAsync());
+              return Json(await _context.SexualOrientations.ToListAsync());
         }
         
         private bool SexualOrientationExists(int id)

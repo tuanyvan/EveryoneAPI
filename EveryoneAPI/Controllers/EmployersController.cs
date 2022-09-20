@@ -23,7 +23,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-              return View(await _context.Employers.ToListAsync());
+              return Json(await _context.Employers.ToListAsync());
         }
 
         // GET: Employers/Details/5
@@ -43,7 +43,7 @@ namespace EveryoneAPI.Controllers
                 return NotFound();
             }
 
-            return View(employer);
+            return Json(employer);
         }
 
         // POST: Employers/Create
@@ -60,7 +60,7 @@ namespace EveryoneAPI.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(employer);
+            return Json(employer);
         }
 
         // POST: Employers/Edit/5
@@ -95,7 +95,7 @@ namespace EveryoneAPI.Controllers
         //        }
         //        return RedirectToAction(nameof(Index));
         //    }
-        //    return View(employer);
+        //    return Json(employer);
         //}
 
         // POST: Employers/Delete/5

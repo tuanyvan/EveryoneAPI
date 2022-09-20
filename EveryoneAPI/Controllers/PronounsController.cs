@@ -23,7 +23,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-              return View(await _context.Pronouns.ToListAsync());
+              return Json(await _context.Pronouns.ToListAsync());
         }
 
         private bool PronounExists(int id)

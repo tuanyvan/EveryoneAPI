@@ -24,7 +24,7 @@ namespace EveryoneAPI.Controllers
         public async Task<IActionResult> Index()
         {
             var everyoneDBContext = _context.Employees.Include(e => e.Department).Include(e => e.Employer).Include(e => e.EthnicityNavigation).Include(e => e.GenderIdentityNavigation).Include(e => e.Pod).Include(e => e.PronounNavigation).Include(e => e.SexualOrientationNavigation);
-            return View(await everyoneDBContext.ToListAsync());
+            return Json(await everyoneDBContext.ToListAsync());
         }
 
         // GET: Employees/Details/5
@@ -51,7 +51,7 @@ namespace EveryoneAPI.Controllers
                 return NotFound();
             }
 
-            return View(employee);
+            return Json(employee);
         }
 
         // POST: Employees/Create
@@ -75,7 +75,7 @@ namespace EveryoneAPI.Controllers
             ViewData["PodId"] = new SelectList(_context.Pods, "PodId", "PodId", employee.PodId);
             ViewData["Pronoun"] = new SelectList(_context.Pronouns, "PronounId", "PronounId", employee.Pronoun);
             ViewData["SexualOrientation"] = new SelectList(_context.SexualOrientations, "OrientationId", "OrientationId", employee.SexualOrientation);
-            return View(employee);
+            return Json(employee);
         }
 
         // POST: Employees/Edit/5
@@ -118,7 +118,7 @@ namespace EveryoneAPI.Controllers
             ViewData["PodId"] = new SelectList(_context.Pods, "PodId", "PodId", employee.PodId);
             ViewData["Pronoun"] = new SelectList(_context.Pronouns, "PronounId", "PronounId", employee.Pronoun);
             ViewData["SexualOrientation"] = new SelectList(_context.SexualOrientations, "OrientationId", "OrientationId", employee.SexualOrientation);
-            return View(employee);
+            return Json(employee);
         }
 
         // POST: Employees/Delete/5
