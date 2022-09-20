@@ -19,6 +19,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddScoped<EveryoneDBContext>();
+builder.Services.AddMvc(option => option.EnableEndpointRouting = false);
 
 var app = builder.Build();
 
