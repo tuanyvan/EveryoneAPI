@@ -7,12 +7,8 @@ namespace EveryoneAPI.Models
 {
     public partial class EveryoneDBContext : DbContext
     {
-
-        private IConfigurationRoot Configuration;
-
-        public EveryoneDBContext(IConfiguration configuration)
+        public EveryoneDBContext()
         {
-            Configuration = (IConfigurationRoot)configuration;
         }
 
         public EveryoneDBContext(DbContextOptions<EveryoneDBContext> options)
@@ -34,7 +30,7 @@ namespace EveryoneAPI.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer(Configuration["ConnectionStrings:EveryoneDb"]);
+                optionsBuilder.UseSqlServer("Data Source=tcp:everyone-sql-db.database.windows.net,1433;Initial Catalog=EveryoneDB;User Id=everyonedb@everyone-sql-db;Password=kMj5cRqLEXKDnHb");
             }
         }
 
@@ -42,11 +38,11 @@ namespace EveryoneAPI.Models
         {
             modelBuilder.Entity<Department>(entity =>
             {
+                entity.HasIndex(e => e.EmployerId, "IX_Departments_EmployerId");
+
                 entity.Property(e => e.DepartmentId).ValueGeneratedNever();
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(50)
-                    .IsFixedLength();
+                entity.Property(e => e.Name).HasMaxLength(50);
 
                 entity.HasOne(d => d.Employer)
                     .WithMany(p => p.Departments)
@@ -57,11 +53,21 @@ namespace EveryoneAPI.Models
 
             modelBuilder.Entity<Employee>(entity =>
             {
-                entity.Property(e => e.EmployeeId).ValueGeneratedNever();
+                entity.HasIndex(e => e.DepartmentId, "IX_Employees_DepartmentId");
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(50)
-                    .IsFixedLength();
+                entity.HasIndex(e => e.EmployerId, "IX_Employees_EmployerId");
+
+                entity.HasIndex(e => e.Ethnicity, "IX_Employees_Ethnicity");
+
+                entity.HasIndex(e => e.GenderIdentity, "IX_Employees_GenderIdentity");
+
+                entity.HasIndex(e => e.PodId, "IX_Employees_PodId");
+
+                entity.HasIndex(e => e.Pronoun, "IX_Employees_Pronoun");
+
+                entity.HasIndex(e => e.SexualOrientation, "IX_Employees_SexualOrientation");
+
+                entity.Property(e => e.Name).HasMaxLength(50);
 
                 entity.HasOne(d => d.Department)
                     .WithMany(p => p.Employees)
@@ -108,20 +114,25 @@ namespace EveryoneAPI.Models
             {
                 entity.HasIndex(e => e.EmployerId, "IX_Employers");
 
-                entity.Property(e => e.EmployerId).ValueGeneratedNever();
-
-                entity.Property(e => e.Name)
+                entity.Property(e => e.Email)
                     .HasMaxLength(50)
-                    .IsFixedLength();
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Password)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Uuid)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("UUID");
             });
 
             modelBuilder.Entity<Ethnicity>(entity =>
             {
                 entity.Property(e => e.EthnicityId).ValueGeneratedNever();
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(50)
-                    .IsFixedLength();
+                entity.Property(e => e.Name).HasMaxLength(50);
             });
 
             modelBuilder.Entity<GenderIdentity>(entity =>
@@ -130,18 +141,14 @@ namespace EveryoneAPI.Models
 
                 entity.Property(e => e.GenderId).ValueGeneratedNever();
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(50)
-                    .IsFixedLength();
+                entity.Property(e => e.Name).HasMaxLength(50);
             });
 
             modelBuilder.Entity<Pod>(entity =>
             {
-                entity.Property(e => e.PodId).ValueGeneratedNever();
+                entity.HasIndex(e => e.DepartmentId, "IX_Pods_DepartmentId");
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(50)
-                    .IsFixedLength();
+                entity.Property(e => e.Name).HasMaxLength(50);
 
                 entity.HasOne(d => d.Department)
                     .WithMany(p => p.Pods)
@@ -154,9 +161,7 @@ namespace EveryoneAPI.Models
             {
                 entity.Property(e => e.PronounId).ValueGeneratedNever();
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(10)
-                    .IsFixedLength();
+                entity.Property(e => e.Name).HasMaxLength(25);
             });
 
             modelBuilder.Entity<SexualOrientation>(entity =>
@@ -165,9 +170,7 @@ namespace EveryoneAPI.Models
 
                 entity.Property(e => e.OrientationId).ValueGeneratedNever();
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(50)
-                    .IsFixedLength();
+                entity.Property(e => e.Name).HasMaxLength(50);
             });
 
             OnModelCreatingPartial(modelBuilder);

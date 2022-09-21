@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using EveryoneAPI.Models;
+using Newtonsoft.Json.Linq;
+using static EveryoneAPI.Models.Employer;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace EveryoneAPI.Controllers
 {
@@ -23,7 +26,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-              return Json(await _context.Employers.ToListAsync());
+            return Json(await _context.Employers.ToListAsync());
         }
 
         // GET: Employers/Details/5
@@ -46,57 +49,47 @@ namespace EveryoneAPI.Controllers
             return Json(employer);
         }
 
-        // POST: Employers/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: Employers/Register
         [HttpPost]
-        [Route("Create")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("EmployerId,Name")] Employer employer)
+        [Route("Register")]
+        public async Task<IActionResult> Register([FromBody] EmployerInfo employerInfo)
         {
-            if (ModelState.IsValid)
+
+            foreach (Employer e in _context.Employers.ToList())
             {
-                _context.Add(employer);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (e.Email == employerInfo.Email)
+                {
+                    return BadRequest("That email already exists.");
+                }
             }
-            return Json(employer);
+
+            Employer employer = new Employer();
+
+            employer.Email = employerInfo.Email;
+            employer.Password = employerInfo.Password;
+            employer.Uuid = Guid.NewGuid().ToString();
+
+            _context.Add(employer);
+            await _context.SaveChangesAsync();
+         
+            return Ok();
         }
 
-        // POST: Employers/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Edit(int id, [Bind("EmployerId,Name")] Employer employer)
-        //{
-        //    if (id != employer.EmployerId)
-        //    {
-        //        return NotFound();
-        //    }
+        // POST: Employers/Login
+        [HttpPost]
+        [Route("Login")]
+        public async Task<IActionResult> Login([FromBody] EmployerInfo employerInfo)
+        {
 
-        //    if (ModelState.IsValid)
-        //    {
-        //        try
-        //        {
-        //            _context.Update(employer);
-        //            await _context.SaveChangesAsync();
-        //        }
-        //        catch (DbUpdateConcurrencyException)
-        //        {
-        //            if (!EmployerExists(employer.EmployerId))
-        //            {
-        //                return NotFound();
-        //            }
-        //            else
-        //            {
-        //                throw;
-        //            }
-        //        }
-        //        return RedirectToAction(nameof(Index));
-        //    }
-        //    return Json(employer);
-        //}
+            Employer user = _context.Employers.Where(e => e.Email.Equals(employerInfo.Email) && e.Password.Equals(employerInfo.Password)).SingleOrDefault();
+
+            if (user == null)
+            {
+                return BadRequest("There was no user found with those credentials.");
+            }
+
+            return Ok(user.Uuid);
+        }
 
         // POST: Employers/Delete/5
         [HttpPost, ActionName("Delete")]
@@ -114,7 +107,7 @@ namespace EveryoneAPI.Controllers
             }
             
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return Ok("User deleted");
         }
 
         private bool EmployerExists(int id)
