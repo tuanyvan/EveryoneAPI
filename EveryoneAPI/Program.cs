@@ -2,6 +2,11 @@ using Microsoft.OpenApi.Models;
 using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 using EveryoneAPI.Models;
+using Microsoft.AspNetCore.Authentication.Google;
+using Azure.Security.KeyVault.Secrets;
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using System.Media;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +24,17 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddScoped<EveryoneDBContext>();
+
 builder.Services.AddMvc(option => option.EnableEndpointRouting = false);
+
+var test = builder.Configuration["Authentication:Google:ClientId"];
+var test2 = builder.Configuration["Authentication:Google:ClientSecret"];
+
+builder.Services.AddAuthentication().AddGoogle(googleOptions =>
+{
+    googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+});
 
 var app = builder.Build();
 
