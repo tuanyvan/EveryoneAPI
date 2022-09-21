@@ -7,10 +7,9 @@
       "connectionId": "ConnectionStrings:EveryoneDB"
     },
     "secrets1": {
-      "secretStore": null,
-      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.KeyVault/vaults/EveryoneAPIVault",
-      "type": "secrets.keyVault",
-      "connectionId": "EveryoneKeyVault"
+      "type": "secrets",
+      "connectionId": "EveryoneKeyVault",
+      "dynamicId": null
     }
   }
 }

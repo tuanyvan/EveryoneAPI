@@ -39,15 +39,14 @@ builder.Services.AddAuthentication().AddGoogle(googleOptions =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
+app.UseDeveloperExceptionPage();
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/api/swagger.json", "Everyone API");
-    });
-}
+    c.SwaggerEndpoint("/swagger/api/swagger.json", "Everyone API");
+});
+//}
 
 app.UseHttpsRedirection();
 

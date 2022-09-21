@@ -10,7 +10,8 @@
       "secretStore": null,
       "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.KeyVault/vaults/EveryoneAPIVault",
       "type": "secrets.keyVault",
-      "connectionId": "EveryoneKeyVault"
+      "connectionId": "EveryoneKeyVault",
+      "dynamicId": null
     }
   }
 }
