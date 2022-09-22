@@ -71,12 +71,52 @@ namespace EveryoneAPI.Controllers
             }
             else
             {
-                var departmentData = new
+                var employeeJson = Array.Empty<object>().ToList();
+                var departmentEmployees = _context.Employees.Where(e => e.DepartmentId == department.DepartmentId).ToList();
+                var departmentPods = _context.Pods.Where(p => p.DepartmentId == department.DepartmentId).ToList();
+
+                foreach (var employee in departmentEmployees)
                 {
-                    DepartmentId = department.DepartmentId,
-                    Name = department.Name
+                    var departmentName = _context.Departments.Where(d => d.DepartmentId == employee.DepartmentId).SingleOrDefault();
+                    var podName = _context.Pods.Where(p => p.PodId == employee.PodId).SingleOrDefault();
+
+                    var employeeData = new
+                    {
+                        EmployeeId = employee.EmployeeId,
+                        Name = employee.Name,
+                        GenderIdentity = _context.GenderIdentities.Where(gi => gi.GenderId == employee.GenderIdentity).SingleOrDefault().Name,
+                        SexualOrientation = _context.SexualOrientations.Where(s => s.OrientationId == employee.SexualOrientation).SingleOrDefault().Name,
+                        Ethnicity = _context.Ethnicities.Where(e => e.EthnicityId == employee.Ethnicity).SingleOrDefault().Name,
+                        EmployerId = employee.EmployerId,
+                        DepartmentId = employee.DepartmentId,
+                        DepartmentName = departmentName == null ? null : departmentName.Name,
+                        PodId = employee.PodId,
+                        PodName = podName == null ? null : podName.Name,
+                        Pronoun = _context.Pronouns.Where(e => e.PronounId == employee.Pronoun).SingleOrDefault().Name,
+                    };
+                    employeeJson.Add(employeeData);
+                }
+
+                var podJson = Array.Empty<object>().ToList();
+
+                foreach (var pod in departmentPods)
+                {
+                    var podData = new
+                    {
+                        PodId = pod.PodId,
+                        Name = pod.Name,
+                        DepartmentId = pod.DepartmentId
+                    };
+                    podJson.Add(podData);
+                }
+
+                var returnJson = new
+                {
+                    Employees = employeeJson,
+                    Pods = podJson
                 };
-                return Json(departmentData);
+
+                return Json(returnJson);
             }
 
         }
