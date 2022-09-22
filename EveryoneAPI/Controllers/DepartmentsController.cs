@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using EveryoneAPI.Models;
-using static EveryoneAPI.Models.Employee;
 
 namespace EveryoneAPI.Controllers
 {
@@ -40,7 +33,6 @@ namespace EveryoneAPI.Controllers
                 {
                     DepartmentId = department.DepartmentId,
                     Name = department.Name,
-                    EmployerId = department.EmployerId
                 };
                 json.Add(departmentData);
             }
@@ -73,8 +65,14 @@ namespace EveryoneAPI.Controllers
             }
             else
             {
-                return Json(department);
+                var departmentData = new
+                {
+                    DepartmentId = department.DepartmentId,
+                    Name = department.Name
+                };
+                return Json(departmentData);
             }
+
         }
 
         // POST: Departments/Create
@@ -121,11 +119,11 @@ namespace EveryoneAPI.Controllers
             try
             {
 
-                var user = _context.Employers.Where(e => e.Uuid.Equals(uuid)).SingleOrDefault();
+                var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
                 if (user != null)
                 {
-                    Department selectedDepartment = _context.Departments.Where(d => d.EmployerId == id && d.EmployerId == user.EmployerId).SingleOrDefault();
+                    Department selectedDepartment = _context.Departments.Where(d => d.DepartmentId == id && d.EmployerId == user.EmployerId).SingleOrDefault();
                     if (selectedDepartment != null)
                     {
 
@@ -149,7 +147,7 @@ namespace EveryoneAPI.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest("The form to edit the employee has a malformed field.");
+                return BadRequest("The form to edit the department has a malformed field.");
             }
         }
 
