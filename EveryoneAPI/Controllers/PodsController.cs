@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using EveryoneAPI.Models;
+using Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.PointsToAnalysis;
+using MessagePack;
+using Newtonsoft.Json.Linq;
 
 namespace EveryoneAPI.Controllers
 {
@@ -22,31 +25,109 @@ namespace EveryoneAPI.Controllers
         // GET: Pods
         [HttpGet]
         [Route("List")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int departmentId, string uuid)
         {
-            var everyoneDBContext = _context.Pods.Include(p => p.Department);
-            return Json(await everyoneDBContext.ToListAsync());
+
+            if (uuid == null)
+            {
+                return BadRequest("The user could not be identified at the beginning of the request.");
+            }
+
+            var department = _context.Departments.Where(d => d.DepartmentId == departmentId).SingleOrDefault();
+            if (department == null)
+            {
+                return BadRequest("The requested department id for the pod index does not exist.");
+            }
+
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+            if (user == null)
+            {
+                return BadRequest("The user making the request is invalid.");
+            }
+
+            if (department.EmployerId != user.EmployerId)
+            {
+                return BadRequest("The user requesting the department pod index does not have ownership over this department.");
+            }
+
+            var json = Array.Empty<object>().ToList();
+            var departmentPods = _context.Pods.Where(p => p.DepartmentId == department.DepartmentId).ToList();
+
+            foreach (var pod in departmentPods)
+            {
+                var podData = new
+                {
+                    PodId = pod.PodId,
+                    Name = pod.Name,
+                    DepartmentId = pod.DepartmentId
+                };
+                json.Add(podData);
+            }
+
+            return Json(json);
         }
 
+        /**
+         * Get list of employees belonging to the pod.
+         */
         // GET: Pods/Details/5
         [HttpGet]
         [Route("Details")]
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id, string uuid)
         {
             if (id == null || _context.Pods == null)
             {
-                return NotFound();
+                return NotFound("The specified pod could not be found because the id supplied is null.");
             }
 
-            var pod = await _context.Pods
-                .Include(p => p.Department)
-                .FirstOrDefaultAsync(m => m.PodId == id);
+            if (uuid == null)
+            {
+                return BadRequest("The user could not be identified at the beginning of this request.");
+            }
+
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+            var pod = _context.Pods.Where(p => p.PodId == id).SingleOrDefault();
+
             if (pod == null)
             {
-                return NotFound();
+                return BadRequest("The requested pod could not be found as its id does not match any existing pods.");
             }
 
-            return Json(pod);
+            var podDepartment = pod.Department;
+
+            if (podDepartment.EmployerId != user.EmployerId)
+            {
+                return BadRequest("The user does not have ownership over the specified pod.");
+            }
+
+            var json = Array.Empty<object>().ToList();
+            var podEmployees = _context.Employees.Where(e => e.PodId == pod.PodId).ToList();
+
+            foreach (var employee in podEmployees)
+            {
+                var departmentName = _context.Departments.Where(d => d.DepartmentId == employee.DepartmentId).SingleOrDefault();
+                var podName = _context.Pods.Where(p => p.PodId == employee.PodId).SingleOrDefault();
+
+                var employeeData = new
+                {
+                    EmployeeId = employee.EmployeeId,
+                    Name = employee.Name,
+                    GenderIdentity = _context.GenderIdentities.Where(gi => gi.GenderId == employee.GenderIdentity).SingleOrDefault().Name,
+                    SexualOrientation = _context.SexualOrientations.Where(s => s.OrientationId == employee.SexualOrientation).SingleOrDefault().Name,
+                    Ethnicity = _context.Ethnicities.Where(e => e.EthnicityId == employee.Ethnicity).SingleOrDefault().Name,
+                    EmployerId = employee.EmployerId,
+                    DepartmentId = employee.DepartmentId,
+                    DepartmentName = departmentName == null ? null : departmentName.Name,
+                    PodId = employee.PodId,
+                    PodName = podName == null ? null : podName.Name,
+                    Pronoun = _context.Pronouns.Where(e => e.PronounId == employee.Pronoun).SingleOrDefault().Name,
+                };
+
+                json.Add(employeeData);
+            }
+
+            return Json(json);
+
         }
 
         // POST: Pods/Create
@@ -55,16 +136,37 @@ namespace EveryoneAPI.Controllers
         [HttpPost]
         [Route("Create")]
         
-        public async Task<IActionResult> Create([Bind("PodId,Name,DepartmentId")] Pod pod)
+        public async Task<IActionResult> Create(string uuid, [FromBody] PodFormModel pod)
         {
-            if (ModelState.IsValid)
+
+            if (uuid == null)
             {
-                _context.Add(pod);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return BadRequest("The user could not be identified at the beginning of this request.");
             }
-            ViewData["DepartmentId"] = new SelectList(_context.Departments, "DepartmentId", "DepartmentId", pod.DepartmentId);
-            return Json(pod);
+
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
+            if (user == null)
+            {
+                return BadRequest("The user making the request is invalid.");
+            }
+
+            var department = _context.Departments.Where(d => d.DepartmentId == pod.DepartmentId).SingleOrDefault();
+
+            if (department.EmployerId != user.EmployerId)
+            {
+                return BadRequest("The user does not own the department where the pod is being created.");
+            }
+
+            Pod newPod = new Pod();
+
+            newPod.Name = pod.Name;
+            newPod.DepartmentId = pod.DepartmentId;
+
+            _context.Add(pod);
+            await _context.SaveChangesAsync();
+
+            return Ok("The pod was successfully created.");
         }
 
         // POST: Pods/Edit/5
@@ -73,54 +175,109 @@ namespace EveryoneAPI.Controllers
         [HttpPost]
         [Route("Edit")]
         
-        public async Task<IActionResult> Edit(int id, [Bind("PodId,Name,DepartmentId")] Pod pod)
+        public async Task<IActionResult> Edit(int id, string uuid, [FromBody] PodEditModel pod)
         {
-            if (id != pod.PodId)
+            if (uuid == null)
             {
-                return NotFound();
+                return BadRequest("The user could not be identified at the beginning of this request.");
             }
 
-            if (ModelState.IsValid)
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+            
+            if (user == null)
             {
-                try
-                {
-                    _context.Update(pod);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PodExists(pod.PodId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                return BadRequest("The user making the pod edit request is invalid.");
             }
-            ViewData["DepartmentId"] = new SelectList(_context.Departments, "DepartmentId", "DepartmentId", pod.DepartmentId);
-            return Json(pod);
+
+            var targetedPod = _context.Pods.Where(p => p.PodId == id).SingleOrDefault();
+
+            if (targetedPod == null)
+            {
+                return BadRequest("The pod targeted for editing could not be found with the supplied id.");
+            }
+
+            // Check that the pod's department belongs to the user employer.
+            Department podDepartment = targetedPod.Department;
+            if (podDepartment.EmployerId != user.EmployerId)
+            {
+                return BadRequest("The pod targeted for editing does not belong to the user.");
+            }
+
+            // Pod will only have its name editable.
+            targetedPod.Name = pod.Name;
+            
+            // Try to save the changes.
+            try
+            {
+                _context.Update(pod);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return StatusCode(500, "A critical error occured while trying to edit the specified pod.");
+            }
+
+            return Ok("The pod was successfully edited.");
         }
 
         // POST: Pods/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpDelete]
+        [Route("Delete")]
         
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id, string uuid)
         {
+            if (uuid == null)
+            {
+                return BadRequest("The user could not be identified at the beginning of the request.");
+            }
+
+            if (id == null)
+            {
+                return BadRequest("Please supply a value for the parameter: id");
+            }
+
             if (_context.Pods == null)
             {
                 return Problem("Entity set 'EveryoneDBContext.Pods'  is null.");
             }
+
             var pod = await _context.Pods.FindAsync(id);
+
+            if (pod == null)
+            {
+                return BadRequest("The pod request for deletion does not exist.");
+            }
+
+            // Verify that the pod belongs to the employer.
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+            Department podDepartment= pod.Department;
+            if (podDepartment.EmployerId != user.EmployerId)
+            {
+                return BadRequest("The department belonging to the deleted pod does not belong to the user.");
+            }
+
             if (pod != null)
             {
+
+                // Cascade null employee PodId fields belonging to the pod.
+                var podEmployees = _context.Employees.Where(e => e.PodId == pod.PodId).ToList();
+
+                foreach (var employee in podEmployees)
+                {
+                    employee.PodId = null;
+                    _context.Update(employee);
+                }
+                await _context.SaveChangesAsync();
+
+                // Remove the pod.
                 _context.Pods.Remove(pod);
+                await _context.SaveChangesAsync();
+                return Ok($"The department was successfully deleted. {podEmployees.Count} employees no longer have a pod.");
             }
-            
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            else
+            {
+                return BadRequest("The pod requested for deletion does not exist.");
+            }
         }
 
         private bool PodExists(int id)

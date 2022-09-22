@@ -26,6 +26,12 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string uuid)
         {
+
+            if (uuid == null)
+            {
+                return BadRequest("The user could not be identified at the beginning of this request.");
+            }
+
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
             if (user == null)
@@ -68,9 +74,15 @@ namespace EveryoneAPI.Controllers
         [Route("Details")]
         public async Task<IActionResult> Details(int id, string uuid)
         {
+
             if (id == null)
             {
                 return NotFound("The provided parameters are missing: id");
+            }
+
+            if (uuid == null)
+            {
+                return BadRequest("The user could not be identified at the beginning of this request.");
             }
 
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
@@ -117,11 +129,19 @@ namespace EveryoneAPI.Controllers
         {
             try
             {
+
+                if (uuid == null)
+                {
+                    return BadRequest("The user could not be identified at the beginning of this request.");
+                }
+
                 var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
                 if (user == null)
                 {
                     return BadRequest("The user requesting the employee creation does not exist.");
                 }
+
                 Employee newEmployee = new Employee();
                 newEmployee.Name = employee.Name;
                 newEmployee.GenderIdentity = employee.GenderIdentity;
@@ -152,6 +172,11 @@ namespace EveryoneAPI.Controllers
         {
             try
             {
+
+                if (uuid == null)
+                {
+                    return BadRequest("The user could not be identified at the beginning of this request.");
+                }
 
                 Employer user = _context.Employers.Where(e => e.Uuid.Equals(uuid)).SingleOrDefault();
 
@@ -199,12 +224,20 @@ namespace EveryoneAPI.Controllers
 
         public async Task<IActionResult> DeleteConfirmed(int id, string uuid)
         {
+
+            if (uuid == null)
+            {
+                return BadRequest("The user could not be identified at the beginning of this request.");
+            }
+
             if (_context.Employees == null)
             {
                 return Problem("Entity set 'EveryoneDBContext.Employees'  is null.");
             }
+
             var employee = await _context.Employees.FindAsync(id);
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
             if (employee != null && user != null)
             {
                 if (user.EmployerId == employee.EmployerId)

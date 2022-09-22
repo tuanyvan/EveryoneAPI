@@ -17,6 +17,12 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string uuid)
         {
+
+            if (uuid == null)
+            {
+                return BadRequest("The user could not be identified at the beginning of this request.");
+            }
+
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
             if (user == null)
             {
@@ -85,6 +91,12 @@ namespace EveryoneAPI.Controllers
         {
             try
             {
+
+                if (uuid == null)
+                {
+                    return BadRequest("The user could not be identified at the beginning of this request.");
+                }
+
                 var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
                 if (user == null)
@@ -118,6 +130,11 @@ namespace EveryoneAPI.Controllers
         {
             try
             {
+
+                if (uuid == null)
+                {
+                    return BadRequest("The user could not be identified at the beginning of this request.");
+                }
 
                 var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
@@ -157,6 +174,12 @@ namespace EveryoneAPI.Controllers
         
         public async Task<IActionResult> DeleteConfirmed(int id, string uuid)
         {
+
+            if (uuid == null)
+            {
+                return BadRequest("The user could not be identified at the beginning of this request.");
+            }
+
             if (_context.Departments == null)
             {
                 return Problem("Entity set 'EveryoneDBContext.Departments'  is null.");
