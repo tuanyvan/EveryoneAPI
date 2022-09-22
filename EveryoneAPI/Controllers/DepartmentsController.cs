@@ -53,7 +53,7 @@ namespace EveryoneAPI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [Route("Create")]
-        [ValidateAntiForgeryToken]
+        
         public async Task<IActionResult> Create([Bind("DepartmentId,Name,EmployerId")] Department department)
         {
             if (ModelState.IsValid)
@@ -71,7 +71,7 @@ namespace EveryoneAPI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [Route("Edit")]
-        [ValidateAntiForgeryToken]
+        
         public async Task<IActionResult> Edit(int id, [Bind("DepartmentId,Name,EmployerId")] Department department)
         {
             if (id != department.DepartmentId)
@@ -106,7 +106,7 @@ namespace EveryoneAPI.Controllers
         // POST: Departments/Delete/5
         [HttpPost, ActionName("Delete")]
         [Route("Delete")]
-        [ValidateAntiForgeryToken]
+        
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (_context.Departments == null)

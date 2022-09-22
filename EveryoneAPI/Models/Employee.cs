@@ -22,5 +22,26 @@ namespace EveryoneAPI.Models
         public virtual Pod? Pod { get; set; }
         public virtual Pronoun PronounNavigation { get; set; } = null!;
         public virtual SexualOrientation SexualOrientationNavigation { get; set; } = null!;
+
+        public partial class EmployeeFormModel
+        {
+            public string Name { get; set; } = null!;
+            public int GenderIdentity { get; set; }
+            public int SexualOrientation { get; set; }
+            public int Ethnicity { get; set; }
+            public int? DepartmentId { get; set; }
+            public int? PodId { get; set; }
+            public int Pronoun { get; set; }
+        }
+        public partial class EmployeeEditModel
+        {
+            public string Name { get; set; } = null!;
+            public int GenderIdentity { get; set; }
+            public int SexualOrientation { get; set; }
+            public int Ethnicity { get; set; }
+            public int? DepartmentId { get; set; }
+            public int? PodId { get; set; }
+            public int Pronoun { get; set; }
+        }
     }
 }

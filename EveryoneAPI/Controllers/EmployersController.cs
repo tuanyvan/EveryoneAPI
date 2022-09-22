@@ -22,13 +22,6 @@ namespace EveryoneAPI.Controllers
             _context = context;
         }
 
-        // GET: Employers
-        [HttpGet]
-        public async Task<IActionResult> Index()
-        {
-            return Json(await _context.Employers.ToListAsync());
-        }
-
         // GET: Employers/Details/5
         [HttpGet]
         [Route("Details")]
@@ -93,7 +86,7 @@ namespace EveryoneAPI.Controllers
 
         // POST: Employers/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (_context.Employers == null)

@@ -54,7 +54,7 @@ namespace EveryoneAPI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [Route("Create")]
-        [ValidateAntiForgeryToken]
+        
         public async Task<IActionResult> Create([Bind("PodId,Name,DepartmentId")] Pod pod)
         {
             if (ModelState.IsValid)
@@ -72,7 +72,7 @@ namespace EveryoneAPI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [Route("Edit")]
-        [ValidateAntiForgeryToken]
+        
         public async Task<IActionResult> Edit(int id, [Bind("PodId,Name,DepartmentId")] Pod pod)
         {
             if (id != pod.PodId)
@@ -106,7 +106,7 @@ namespace EveryoneAPI.Controllers
 
         // POST: Pods/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (_context.Pods == null)

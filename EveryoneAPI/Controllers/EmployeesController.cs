@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using EveryoneAPI.Models;
+using static EveryoneAPI.Models.Employee;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace EveryoneAPI.Controllers
 {
@@ -21,37 +24,78 @@ namespace EveryoneAPI.Controllers
 
         // GET: Employees
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string uuid)
         {
-            var everyoneDBContext = _context.Employees.Include(e => e.Department).Include(e => e.Employer).Include(e => e.EthnicityNavigation).Include(e => e.GenderIdentityNavigation).Include(e => e.Pod).Include(e => e.PronounNavigation).Include(e => e.SexualOrientationNavigation);
-            return Json(await everyoneDBContext.ToListAsync());
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
+            var json = Array.Empty<object>().ToList();
+
+            var employees = _context.Employees.Where(e => e.EmployerId == user.EmployerId).ToList();
+
+            foreach (var employee in employees)
+            {
+                var departmentName = _context.Departments.Where(d => d.DepartmentId == employee.DepartmentId).SingleOrDefault();
+                var podName = _context.Pods.Where(p => p.PodId == employee.PodId).SingleOrDefault();
+
+                var employeeData = new
+                {
+                    EmployeeId = employee.EmployeeId,
+                    Name = employee.Name,
+                    GenderIdentity = _context.GenderIdentities.Where(gi => gi.GenderId == employee.GenderIdentity).SingleOrDefault().Name,
+                    SexualOrientation = _context.SexualOrientations.Where(s => s.OrientationId == employee.SexualOrientation).SingleOrDefault().Name,
+                    Ethnicity = _context.Ethnicities.Where(e => e.EthnicityId == employee.Ethnicity).SingleOrDefault().Name,
+                    EmployerId = employee.EmployerId,
+                    DepartmentId = employee.DepartmentId,
+                    DepartmentName = departmentName == null ? null : departmentName.Name,
+                    PodId = employee.PodId,
+                    PodName = podName == null ? null : podName.Name,
+                    Pronoun = _context.Pronouns.Where(e => e.PronounId == employee.Pronoun).SingleOrDefault().Name,
+                };
+
+                json.Add(employeeData);
+            }
+
+            return Json(json);
         }
 
         // GET: Employees/Details/5
         [HttpGet]
         [Route("Details")]
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id, string uuid)
         {
             if (id == null || _context.Employees == null)
             {
                 return NotFound();
             }
 
-            var employee = await _context.Employees
-                .Include(e => e.Department)
-                .Include(e => e.Employer)
-                .Include(e => e.EthnicityNavigation)
-                .Include(e => e.GenderIdentityNavigation)
-                .Include(e => e.Pod)
-                .Include(e => e.PronounNavigation)
-                .Include(e => e.SexualOrientationNavigation)
-                .FirstOrDefaultAsync(m => m.EmployeeId == id);
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
+            var employee = _context.Employees.Where(e => e.EmployeeId == id && e.EmployerId == user.EmployerId).SingleOrDefault();
+
             if (employee == null)
             {
                 return NotFound();
             }
 
-            return Json(employee);
+            var departmentName = _context.Departments.Where(d => d.DepartmentId == employee.DepartmentId).SingleOrDefault();
+            var podName = _context.Pods.Where(p => p.PodId == employee.PodId).SingleOrDefault();
+
+            var employeeData = new
+            {
+                EmployeeId = employee.EmployeeId,
+                Name = employee.Name,
+                GenderIdentity = _context.GenderIdentities.Where(gi => gi.GenderId == employee.GenderIdentity).SingleOrDefault().Name,
+                SexualOrientation = _context.SexualOrientations.Where(s => s.OrientationId == employee.SexualOrientation).SingleOrDefault().Name,
+                Ethnicity = _context.Ethnicities.Where(e => e.EthnicityId == employee.Ethnicity).SingleOrDefault().Name,
+                EmployerId = employee.EmployerId,
+                DepartmentId = employee.DepartmentId,
+                DepartmentName = departmentName == null ? null : departmentName.Name,
+                PodId = employee.PodId,
+                PodName = podName == null ? null : podName.Name,
+                Pronoun = _context.Pronouns.Where(e => e.PronounId == employee.Pronoun).SingleOrDefault().Name,
+            };
+
+            return Json(employeeData);
         }
 
         // POST: Employees/Create
@@ -59,23 +103,34 @@ namespace EveryoneAPI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [Route("Create")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("EmployeeId,Name,GenderIdentity,SexualOrientation,Ethnicity,EmployerId,DepartmentId,PodId,Pronoun")] Employee employee)
+        public async Task<IActionResult> Create([FromBody] EmployeeFormModel employee, string uuid)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(employee);
+                var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+                if (user == null)
+                {
+                    return BadRequest("The user requesting the employee creation does not exist.");
+                }
+                Employee newEmployee = new Employee();
+                newEmployee.Name = employee.Name;
+                newEmployee.GenderIdentity = employee.GenderIdentity;
+                newEmployee.SexualOrientation = employee.SexualOrientation;
+                newEmployee.Ethnicity = employee.Ethnicity;
+                newEmployee.EmployerId = user.EmployerId;
+                newEmployee.DepartmentId = employee.DepartmentId;
+                newEmployee.PodId = employee.PodId;
+                newEmployee.Pronoun = employee.Pronoun;
+
+                _context.Add(newEmployee);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+
+                return Ok("The employee was successfully created.");
             }
-            ViewData["DepartmentId"] = new SelectList(_context.Departments, "DepartmentId", "DepartmentId", employee.DepartmentId);
-            ViewData["EmployerId"] = new SelectList(_context.Employers, "EmployerId", "EmployerId", employee.EmployerId);
-            ViewData["Ethnicity"] = new SelectList(_context.Ethnicities, "EthnicityId", "EthnicityId", employee.Ethnicity);
-            ViewData["GenderIdentity"] = new SelectList(_context.GenderIdentities, "GenderId", "GenderId", employee.GenderIdentity);
-            ViewData["PodId"] = new SelectList(_context.Pods, "PodId", "PodId", employee.PodId);
-            ViewData["Pronoun"] = new SelectList(_context.Pronouns, "PronounId", "PronounId", employee.Pronoun);
-            ViewData["SexualOrientation"] = new SelectList(_context.SexualOrientations, "OrientationId", "OrientationId", employee.SexualOrientation);
-            return Json(employee);
+            catch (Exception e)
+            {
+                return BadRequest("There was an error with the creation of the employee.");
+            }
         }
 
         // POST: Employees/Edit/5
@@ -83,66 +138,90 @@ namespace EveryoneAPI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [Route("Edit")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("EmployeeId,Name,GenderIdentity,SexualOrientation,Ethnicity,EmployerId,DepartmentId,PodId,Pronoun")] Employee employee)
+        public async Task<IActionResult> Edit(int id, string uuid, [FromBody] EmployeeEditModel employee)
         {
-            if (id != employee.EmployeeId)
+            try
             {
-                return NotFound();
-            }
 
-            if (ModelState.IsValid)
-            {
-                try
+                Employer user = _context.Employers.Where(e => e.Uuid.Equals(uuid)).SingleOrDefault();
+
+                if (user != null)
                 {
-                    _context.Update(employee);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!EmployeeExists(employee.EmployeeId))
+                    Employee selectedEmployee = _context.Employees.Where(e => e.EmployeeId == id && e.EmployerId == user.EmployerId).SingleOrDefault();
+                    if (selectedEmployee != null)
                     {
-                        return NotFound();
+                        selectedEmployee.Name = employee.Name;
+                        selectedEmployee.GenderIdentity = employee.GenderIdentity;
+                        selectedEmployee.SexualOrientation = employee.SexualOrientation;
+                        selectedEmployee.Ethnicity = employee.Ethnicity;
+                        selectedEmployee.DepartmentId = employee.DepartmentId;
+                        selectedEmployee.PodId = employee.PodId;
+                        selectedEmployee.Pronoun = employee.Pronoun;
+                        _context.Update(selectedEmployee);
+                        await _context.SaveChangesAsync();
+                        return Ok("Employee was successfully edited.");
                     }
                     else
                     {
-                        throw;
+                        return BadRequest("The request employee for deletion could not be found.");
                     }
                 }
-                return RedirectToAction(nameof(Index));
+                else
+                {
+                    return BadRequest("Request was made from a non-existent user.");
+                }
+
+                try
+                {
+                    _context.Update(employee);
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return BadRequest("The employee could not be edited.");
+                }
             }
-            ViewData["DepartmentId"] = new SelectList(_context.Departments, "DepartmentId", "DepartmentId", employee.DepartmentId);
-            ViewData["EmployerId"] = new SelectList(_context.Employers, "EmployerId", "EmployerId", employee.EmployerId);
-            ViewData["Ethnicity"] = new SelectList(_context.Ethnicities, "EthnicityId", "EthnicityId", employee.Ethnicity);
-            ViewData["GenderIdentity"] = new SelectList(_context.GenderIdentities, "GenderId", "GenderId", employee.GenderIdentity);
-            ViewData["PodId"] = new SelectList(_context.Pods, "PodId", "PodId", employee.PodId);
-            ViewData["Pronoun"] = new SelectList(_context.Pronouns, "PronounId", "PronounId", employee.Pronoun);
-            ViewData["SexualOrientation"] = new SelectList(_context.SexualOrientations, "OrientationId", "OrientationId", employee.SexualOrientation);
-            return Json(employee);
+            catch (Exception e)
+            {
+                return BadRequest("The form to edit the employee has a malformed field.");
+            }
         }
 
+
         // POST: Employees/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        [HttpDelete]
+        [Route("Delete")]
+
+        public async Task<IActionResult> DeleteConfirmed(int id, string uuid)
         {
             if (_context.Employees == null)
             {
                 return Problem("Entity set 'EveryoneDBContext.Employees'  is null.");
             }
             var employee = await _context.Employees.FindAsync(id);
-            if (employee != null)
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+            if (employee != null && user != null)
             {
-                _context.Employees.Remove(employee);
+                if (user.EmployerId == employee.EmployerId)
+                {
+                    _context.Employees.Remove(employee);
+                    await _context.SaveChangesAsync();
+                    return Ok("Employee was successfully deleted.");
+                }
+                else
+                {
+                    return BadRequest("The employee requested for deletion does not belong to the user.");
+                }
             }
-            
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            else
+            {
+                return BadRequest("The employee or user used for the deletion process could not be found.");
+            }
+
         }
 
         private bool EmployeeExists(int id)
         {
-          return _context.Employees.Any(e => e.EmployeeId == id);
+            return _context.Employees.Any(e => e.EmployeeId == id);
         }
     }
 }
