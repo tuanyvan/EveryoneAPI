@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using EveryoneAPI.Models;
+using static EveryoneAPI.Models.Employee;
 
 namespace EveryoneAPI.Controllers
 {
@@ -21,31 +22,59 @@ namespace EveryoneAPI.Controllers
 
         // GET: Departments
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string uuid)
         {
-            var everyoneDBContext = _context.Departments.Include(d => d.Employer);
-            return Json(await everyoneDBContext.ToListAsync());
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+            if (user == null)
+            {
+                return BadRequest("The user sending the request is invalid.");
+            }
+
+            var json = Array.Empty<object>().ToList();
+
+            var departments = _context.Departments.Where(d => d.EmployerId == user.EmployerId).ToList();
+
+            foreach (var department in departments)
+            {
+                var departmentData = new
+                {
+                    DepartmentId = department.DepartmentId,
+                    Name = department.Name,
+                    EmployerId = department.EmployerId
+                };
+                json.Add(departmentData);
+            }
+
+            return Json(json);
         }
 
         // GET: Departments/Details/5
         [HttpGet]
         [Route("Details")]
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id, string uuid)
         {
-            if (id == null || _context.Departments == null)
+            if (id == null || uuid == null)
             {
-                return NotFound();
+                return NotFound("The provided parameters must be filled out: id, uuid");
             }
 
-            var department = await _context.Departments
-                .Include(d => d.Employer)
-                .FirstOrDefaultAsync(m => m.DepartmentId == id);
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
+            if (user == null)
+            {
+                return BadRequest("An invalid user has sent the request.");
+            }
+
+            var department = _context.Departments.Where(d => d.DepartmentId == id && d.EmployerId == user.EmployerId).SingleOrDefault();
+
             if (department == null)
             {
-                return NotFound();
+                return NotFound("The department requested could not be found.");
             }
-
-            return Json(department);
+            else
+            {
+                return Json(department);
+            }
         }
 
         // POST: Departments/Create
@@ -54,16 +83,31 @@ namespace EveryoneAPI.Controllers
         [HttpPost]
         [Route("Create")]
         
-        public async Task<IActionResult> Create([Bind("DepartmentId,Name,EmployerId")] Department department)
+        public async Task<IActionResult> Create(string uuid, [FromBody] DepartmentCRUDModel department)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(department);
+                var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
+                if (user == null)
+                {
+                    return BadRequest("The user making the create department request is invalid.");
+                }
+
+                var newDepartment = new Department();
+
+                newDepartment.Name = department.Name;
+                newDepartment.EmployerId = user.EmployerId;
+
+                _context.Add(newDepartment);
+
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return Ok("The department was successfully created.");
             }
-            ViewData["EmployerId"] = new SelectList(_context.Employers, "EmployerId", "EmployerId", department.EmployerId);
-            return Json(department);
+            catch (Exception e)
+            {
+                return StatusCode(500, "The department could not be created due to a server error.");
+            }
         }
 
         // POST: Departments/Edit/5
@@ -72,55 +116,92 @@ namespace EveryoneAPI.Controllers
         [HttpPost]
         [Route("Edit")]
         
-        public async Task<IActionResult> Edit(int id, [Bind("DepartmentId,Name,EmployerId")] Department department)
+        public async Task<IActionResult> Edit(int id, string uuid, [FromBody] DepartmentCRUDModel department)
         {
-            if (id != department.DepartmentId)
+            try
             {
-                return NotFound();
-            }
 
-            if (ModelState.IsValid)
-            {
-                try
+                var user = _context.Employers.Where(e => e.Uuid.Equals(uuid)).SingleOrDefault();
+
+                if (user != null)
                 {
-                    _context.Update(department);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!DepartmentExists(department.DepartmentId))
+                    Department selectedDepartment = _context.Departments.Where(d => d.EmployerId == id && d.EmployerId == user.EmployerId).SingleOrDefault();
+                    if (selectedDepartment != null)
                     {
-                        return NotFound();
+
+                        selectedDepartment.Name = department.Name;
+
+                        _context.Update(selectedDepartment);
+                        await _context.SaveChangesAsync();
+                        return Ok("Department was successfully edited.");
                     }
                     else
                     {
-                        throw;
+                        return BadRequest("The requested department for editing could not be found.");
                     }
                 }
-                return RedirectToAction(nameof(Index));
+
+                else
+                {
+                    return BadRequest("Request was made from an invalid user.");
+                }
+
             }
-            ViewData["EmployerId"] = new SelectList(_context.Employers, "EmployerId", "EmployerId", department.EmployerId);
-            return Json(department);
+            catch (Exception e)
+            {
+                return BadRequest("The form to edit the employee has a malformed field.");
+            }
         }
 
         // POST: Departments/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpDelete]
         [Route("Delete")]
         
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id, string uuid)
         {
             if (_context.Departments == null)
             {
                 return Problem("Entity set 'EveryoneDBContext.Departments'  is null.");
             }
+
             var department = await _context.Departments.FindAsync(id);
-            if (department != null)
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
+            if (department != null && user != null)
             {
-                _context.Departments.Remove(department);
+                if (department.EmployerId == user.EmployerId)
+                {
+
+                    var departmentEmployees = _context.Employees.Where(e => e.DepartmentId == department.DepartmentId).ToList();
+                    var pods = _context.Pods.Where(p => p.DepartmentId == department.DepartmentId).ToList();
+
+                    foreach (var employee in departmentEmployees)
+                    {
+                        employee.PodId = null;
+                        employee.DepartmentId = null;
+                        _context.Update(employee);
+                    }
+                    await _context.SaveChangesAsync();
+
+                    foreach (var pod in pods)
+                    {
+                        _context.Remove(pod);
+                    }
+                    await _context.SaveChangesAsync();
+
+                    _context.Departments.Remove(department);
+                    await _context.SaveChangesAsync();
+                    return Ok("The department was successfully deleted.");
+                }
+                else
+                {
+                    return BadRequest("The department requested for deletion does not belong to the user.");
+                }
             }
-            
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            else
+            {
+                return BadRequest("The department or user used for the deletion process could not be found.");
+            }
         }
 
         private bool DepartmentExists(int id)

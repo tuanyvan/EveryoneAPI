@@ -19,4 +19,10 @@ namespace EveryoneAPI.Models
         public virtual ICollection<Employee> Employees { get; set; }
         public virtual ICollection<Pod> Pods { get; set; }
     }
+
+    public partial class DepartmentCRUDModel
+    {
+        public string Name { get; set; } = null!;
+    }
+
 }

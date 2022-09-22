@@ -28,6 +28,11 @@ namespace EveryoneAPI.Controllers
         {
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
+            if (user == null)
+            {
+                return BadRequest("The user sending the request is invalid.");
+            }
+
             var json = Array.Empty<object>().ToList();
 
             var employees = _context.Employees.Where(e => e.EmployerId == user.EmployerId).ToList();
@@ -63,18 +68,23 @@ namespace EveryoneAPI.Controllers
         [Route("Details")]
         public async Task<IActionResult> Details(int id, string uuid)
         {
-            if (id == null || _context.Employees == null)
+            if (id == null)
             {
-                return NotFound();
+                return NotFound("The provided parameters are missing: id");
             }
 
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
+            if (user == null)
+            {
+                return BadRequest("An invalid user has sent the request.");
+            }
 
             var employee = _context.Employees.Where(e => e.EmployeeId == id && e.EmployerId == user.EmployerId).SingleOrDefault();
 
             if (employee == null)
             {
-                return NotFound();
+                return NotFound("The employee requested was not found.");
             }
 
             var departmentName = _context.Departments.Where(d => d.DepartmentId == employee.DepartmentId).SingleOrDefault();
@@ -147,7 +157,9 @@ namespace EveryoneAPI.Controllers
 
                 if (user != null)
                 {
+
                     Employee selectedEmployee = _context.Employees.Where(e => e.EmployeeId == id && e.EmployerId == user.EmployerId).SingleOrDefault();
+                    
                     if (selectedEmployee != null)
                     {
                         selectedEmployee.Name = employee.Name;
@@ -161,23 +173,17 @@ namespace EveryoneAPI.Controllers
                         await _context.SaveChangesAsync();
                         return Ok("Employee was successfully edited.");
                     }
+
                     else
                     {
-                        return BadRequest("The request employee for deletion could not be found.");
+                        return BadRequest("The requested employee for edit could not be found.");
                     }
-                }
-                else
-                {
-                    return BadRequest("Request was made from a non-existent user.");
+
                 }
 
-                try
+                else
                 {
-                    _context.Update(employee);
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    return BadRequest("The employee could not be edited.");
+                    return BadRequest("Request was made from an invalid user.");
                 }
             }
             catch (Exception e)
