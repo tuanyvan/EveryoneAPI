@@ -40,8 +40,6 @@ namespace EveryoneAPI.Models
             {
                 entity.HasIndex(e => e.EmployerId, "IX_Departments_EmployerId");
 
-                entity.Property(e => e.DepartmentId).ValueGeneratedNever();
-
                 entity.Property(e => e.Name).HasMaxLength(50);
 
                 entity.HasOne(d => d.Employer)
