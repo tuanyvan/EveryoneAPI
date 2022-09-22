@@ -114,8 +114,8 @@ namespace EveryoneAPI.Controllers
         }
 
         // POST: Employers/Delete/5
-        [HttpPost, ActionName("Delete")]
-        
+        [HttpDelete]
+        [Route("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (_context.Employers == null)
