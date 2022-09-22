@@ -285,6 +285,15 @@ namespace EveryoneAPI.Controllers
                 var pods = _context.Pods.Where(p => p.DepartmentId == department.DepartmentId).ToList();
                 var remainingEmployees = _context.Employees.Where(e => e.DepartmentId == department.DepartmentId).ToList();
 
+                // Reset all the employee PodIds first.
+                foreach (var employee in remainingEmployees)
+                {
+                    employee.PodId = null;
+                    _context.Update(employee);
+                }
+
+                await _context.SaveChangesAsync();
+
                 // Seed the pods with a random employee and remove them from the list of employees.
                 foreach (var pod in pods)
                 {
@@ -292,10 +301,10 @@ namespace EveryoneAPI.Controllers
                     int randomNumber = random.Next(0, remainingEmployees.Count);
 
                     remainingEmployees[randomNumber].PodId = pod.PodId;
+                    _context.Update(remainingEmployees[randomNumber]);
                     remainingEmployees.Remove(remainingEmployees[randomNumber]);
                 }
 
-                _context.Update(remainingEmployees);
                 await _context.SaveChangesAsync();
 
                 // While there are still employees to sort, go through each pod and add an employee based on uniqueness score.

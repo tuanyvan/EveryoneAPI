@@ -94,7 +94,7 @@ namespace EveryoneAPI.Controllers
                 return BadRequest("The requested pod could not be found as its id does not match any existing pods.");
             }
 
-            var podDepartment = pod.Department;
+            var podDepartment = _context.Departments.Where(d => d.DepartmentId == pod.DepartmentId).SingleOrDefault();
 
             if (podDepartment.EmployerId != user.EmployerId)
             {
@@ -164,7 +164,7 @@ namespace EveryoneAPI.Controllers
             newPod.Name = pod.Name;
             newPod.DepartmentId = pod.DepartmentId;
 
-            _context.Add(pod);
+            _context.Add(newPod);
             await _context.SaveChangesAsync();
 
             return Ok("The pod was successfully created.");
@@ -198,7 +198,7 @@ namespace EveryoneAPI.Controllers
             }
 
             // Check that the pod's department belongs to the user employer.
-            Department podDepartment = targetedPod.Department;
+            Department podDepartment = _context.Departments.Where(d => d.DepartmentId == targetedPod.DepartmentId).SingleOrDefault();
             if (podDepartment.EmployerId != user.EmployerId)
             {
                 return BadRequest("The pod targeted for editing does not belong to the user.");
@@ -210,7 +210,7 @@ namespace EveryoneAPI.Controllers
             // Try to save the changes.
             try
             {
-                _context.Update(pod);
+                _context.Update(targetedPod);
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -251,7 +251,7 @@ namespace EveryoneAPI.Controllers
 
             // Verify that the pod belongs to the employer.
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
-            Department podDepartment= pod.Department;
+            Department podDepartment= _context.Departments.Where(d => d.DepartmentId == pod.DepartmentId).SingleOrDefault();
             if (podDepartment.EmployerId != user.EmployerId)
             {
                 return BadRequest("The department belonging to the deleted pod does not belong to the user.");
