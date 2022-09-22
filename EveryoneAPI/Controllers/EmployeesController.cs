@@ -159,7 +159,7 @@ namespace EveryoneAPI.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest("There was an error with the creation of the employee.");
+                return Ok("There was an error with the creation of the employee.");
             }
         }
 
