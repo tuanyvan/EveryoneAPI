@@ -9,6 +9,8 @@ using EveryoneAPI.Models;
 using Newtonsoft.Json.Linq;
 using static EveryoneAPI.Models.Employer;
 using Microsoft.CodeAnalysis.Operations;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace EveryoneAPI.Controllers
 {
@@ -48,6 +50,11 @@ namespace EveryoneAPI.Controllers
         public async Task<IActionResult> Register([FromBody] EmployerInfo employerInfo)
         {
 
+            if (string.IsNullOrEmpty(employerInfo.Email) || string.IsNullOrEmpty(employerInfo.Password))
+            {
+                return BadRequest("The email and password field cannot be empty.");
+            }
+
             foreach (Employer e in _context.Employers.ToList())
             {
                 if (e.Email == employerInfo.Email)
@@ -57,15 +64,20 @@ namespace EveryoneAPI.Controllers
             }
 
             Employer employer = new Employer();
-
             employer.Email = employerInfo.Email;
-            employer.Password = employerInfo.Password;
+
+            using (var sha256 = SHA256.Create())
+            {
+                var password = Convert.ToBase64String(sha256.ComputeHash(Encoding.Default.GetBytes(employerInfo.Password)));
+                employer.Password = password.ToString();
+            }
+
             employer.Uuid = Guid.NewGuid().ToString();
 
             _context.Add(employer);
             await _context.SaveChangesAsync();
          
-            return Ok();
+            return Ok("The employer was successfully registered.");
         }
 
         // POST: Employers/Login
@@ -74,12 +86,29 @@ namespace EveryoneAPI.Controllers
         public async Task<IActionResult> Login([FromBody] EmployerInfo employerInfo)
         {
 
-            Employer user = _context.Employers.Where(e => e.Email.Equals(employerInfo.Email) && e.Password.Equals(employerInfo.Password)).SingleOrDefault();
+            if (string.IsNullOrEmpty(employerInfo.Email) || string.IsNullOrEmpty(employerInfo.Password))
+            {
+                return BadRequest("The email and password must be filled out.");
+            }
+
+            string hashedPassword;
+
+            using (var sha256 = SHA256.Create())
+            {
+                hashedPassword = Convert.ToBase64String(sha256.ComputeHash(Encoding.Default.GetBytes(employerInfo.Password)));
+            }
+
+            Employer user = _context.Employers.Where(e => e.Email.Equals(employerInfo.Email) && e.Password.Equals(hashedPassword)).SingleOrDefault();
 
             if (user == null)
             {
                 return BadRequest("There was no user found with those credentials.");
             }
+
+            user.Uuid = Guid.NewGuid().ToString();
+
+            _context.Update(user);
+            await _context.SaveChangesAsync();
 
             return Ok(user.Uuid);
         }
