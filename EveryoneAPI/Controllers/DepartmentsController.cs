@@ -265,6 +265,109 @@ namespace EveryoneAPI.Controllers
             }
         }
 
+        [HttpPatch]
+        [Route("SortDepartment")]
+        public async Task<IActionResult> SortDepartment(int departmentId, string uuid)
+        {
+            // NUll check departmentId, uuid.
+            if (departmentId == null|| uuid == null)
+            {
+                return BadRequest("Please specify out the departmentId and uuid parameters.");
+            }
+
+            // Check department belongs to user.
+            var department = _context.Departments.Where(d => d.DepartmentId == departmentId).SingleOrDefault();
+            var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
+
+            // If the department belongs to the user...
+            if (user.EmployerId == department.EmployerId)
+            {
+                var pods = _context.Pods.Where(p => p.DepartmentId == department.DepartmentId).ToList();
+                var remainingEmployees = _context.Employees.Where(e => e.DepartmentId == department.DepartmentId).ToList();
+
+                // Seed the pods with a random employee and remove them from the list of employees.
+                foreach (var pod in pods)
+                {
+                    Random random = new Random();
+                    int randomNumber = random.Next(0, remainingEmployees.Count);
+
+                    remainingEmployees[randomNumber].PodId = pod.PodId;
+                    remainingEmployees.Remove(remainingEmployees[randomNumber]);
+                }
+
+                _context.Update(remainingEmployees);
+                await _context.SaveChangesAsync();
+
+                // While there are still employees to sort, go through each pod and add an employee based on uniqueness score.
+                /**
+                 * Rules
+                 * 1. Any employee with score of 3 is automatically added, their entry in the employees list is then removed.
+                 * 2. For tiebreakers, the first employee with the highest score is given the position in the pod.
+                 * 3. Iterate through each pod one by one, determine the highest diversity scoring employee, change their pod to that PodId, then save the changes on DB.
+                 */
+                while (remainingEmployees.Count > 0)
+                {
+                    for (int i = 0; i < pods.Count; i++)
+                    {
+                        // As long as while condition is true...
+                        if (remainingEmployees.Count > 0)
+                        {
+                            var targetedPod = pods[i];
+                            var podEmployees = _context.Employees.Where(e => e.PodId == targetedPod.PodId).ToList();
+                            
+                            // Scores for remainingEmployees stored here...
+                            List<int> employeeScores = new List<int>();
+
+                            // Qualitative field list below...
+                            HashSet<int> existingGenders = new HashSet<int>();
+                            HashSet<int> existingEthnicities = new HashSet<int>();
+                            HashSet<int> existingOrientation = new HashSet<int>();
+
+                            // Get list of existing genders, ethnicities, orientations in that pod
+                            foreach (var employee in podEmployees)
+                            {
+                                existingGenders.Add(employee.GenderIdentity);
+                                existingEthnicities.Add(employee.Ethnicity);
+                                existingOrientation.Add(employee.SexualOrientation);
+                            }
+
+                            // Calculate the scores for each remainingEmployee using the existing qualitative fields
+                            foreach (var employee in remainingEmployees)
+                            {
+                                int score = 0;
+                                if (existingGenders.Contains(employee.GenderIdentity)) score++;
+                                if (existingEthnicities.Contains(employee.Ethnicity)) score++;
+                                if (existingOrientation.Contains(employee.SexualOrientation)) score++;
+                                employeeScores.Add(score);
+                            }
+
+                            // Get the employee with the highest score, let the first highest scoring employee into the pod, remove the employee from remainingEmployees.
+                            int highestScore = employeeScores.Max();
+                            int indexOfNewEmployee = employeeScores.IndexOf(highestScore);
+                            var newEmployee = remainingEmployees[indexOfNewEmployee];
+                            remainingEmployees.Remove(newEmployee);
+
+                            // Save the changes to the database.
+                            newEmployee.PodId = targetedPod.PodId;
+                            _context.Update(newEmployee);
+                            await _context.SaveChangesAsync();
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                return Ok("All employees were successfully organized into their respective pods.");
+            }
+            else
+            {
+                return BadRequest("The user specified does not have ownership over the specified department.");
+            }
+
+        }
+
         private bool DepartmentExists(int id)
         {
           return _context.Departments.Any(e => e.DepartmentId == id);
