@@ -159,7 +159,7 @@ namespace EveryoneAPI.Controllers
             }
             catch (Exception e)
             {
-                return Ok("There was an error with the creation of the employee.");
+                throw new Exception(e.Message);
             }
         }
 
