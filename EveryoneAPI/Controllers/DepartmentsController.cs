@@ -17,18 +17,19 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string uuid)
         {
-
+            // Find the user sending the request
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of this request.");
+                return StatusCode(401, "The user could not be identified at the beginning of this request.");
             }
 
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
             if (user == null)
             {
-                return BadRequest("The user sending the request is invalid.");
+                return StatusCode(401, "The user sending the request is invalid.");
             }
 
+            // Get a list of all the departments belonging to the user.
             var json = Array.Empty<object>().ToList();
 
             var departments = _context.Departments.Where(d => d.EmployerId == user.EmployerId).ToList();
@@ -51,6 +52,7 @@ namespace EveryoneAPI.Controllers
         [Route("Details")]
         public async Task<IActionResult> Details(int id, string uuid)
         {
+            // Identify the user making the details request.
             if (id == null || uuid == null)
             {
                 return NotFound("The provided parameters must be filled out: id, uuid");
@@ -63,6 +65,7 @@ namespace EveryoneAPI.Controllers
                 return BadRequest("An invalid user has sent the request.");
             }
 
+            // Find the department being requested.
             var department = _context.Departments.Where(d => d.DepartmentId == id && d.EmployerId == user.EmployerId).SingleOrDefault();
 
             if (department == null)
@@ -71,12 +74,14 @@ namespace EveryoneAPI.Controllers
             }
             else
             {
+                // Get and return all the employees in the department being requested.
                 var employeeJson = Array.Empty<object>().ToList();
                 var departmentEmployees = _context.Employees.Where(e => e.DepartmentId == department.DepartmentId).ToList();
                 var departmentPods = _context.Pods.Where(p => p.DepartmentId == department.DepartmentId).ToList();
 
                 foreach (var employee in departmentEmployees)
                 {
+                    // Add departmentName and podName to response payload for front-end convenience.
                     var departmentName = _context.Departments.Where(d => d.DepartmentId == employee.DepartmentId).SingleOrDefault();
                     var podName = _context.Pods.Where(p => p.PodId == employee.PodId).SingleOrDefault();
 
@@ -97,6 +102,7 @@ namespace EveryoneAPI.Controllers
                     employeeJson.Add(employeeData);
                 }
 
+                // Get and return all the pods belonging to the department.
                 var podJson = Array.Empty<object>().ToList();
 
                 foreach (var pod in departmentPods)
@@ -110,6 +116,7 @@ namespace EveryoneAPI.Controllers
                     podJson.Add(podData);
                 }
 
+                // Consolidate the above fields into a single JSON payload and return the value.
                 var returnJson = new
                 {
                     Employees = employeeJson,
@@ -131,19 +138,20 @@ namespace EveryoneAPI.Controllers
         {
             try
             {
-
+                // Perform a user check.
                 if (uuid == null)
                 {
-                    return BadRequest("The user could not be identified at the beginning of this request.");
+                    return StatusCode(401, "The user could not be identified at the beginning of this request.");
                 }
 
                 var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
                 if (user == null)
                 {
-                    return BadRequest("The user making the create department request is invalid.");
+                    return StatusCode(401, "The user making the create department request is invalid.");
                 }
 
+                // Create the new department using DepartmentCRUDModel fields.
                 var newDepartment = new Department();
 
                 newDepartment.Name = department.Name;
@@ -165,19 +173,19 @@ namespace EveryoneAPI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [Route("Edit")]
-        
         public async Task<IActionResult> Edit(int id, string uuid, [FromBody] DepartmentCRUDModel department)
         {
             try
             {
-
+                // Perform a user check.
                 if (uuid == null)
                 {
-                    return BadRequest("The user could not be identified at the beginning of this request.");
+                    return StatusCode(401, "The user could not be identified at the beginning of this request.");
                 }
 
                 var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
+                // If the user could be identified, select and edit the department accordingly.
                 if (user != null)
                 {
                     Department selectedDepartment = _context.Departments.Where(d => d.DepartmentId == id && d.EmployerId == user.EmployerId).SingleOrDefault();
@@ -195,7 +203,6 @@ namespace EveryoneAPI.Controllers
                         return BadRequest("The requested department for editing could not be found.");
                     }
                 }
-
                 else
                 {
                     return BadRequest("Request was made from an invalid user.");
@@ -204,7 +211,7 @@ namespace EveryoneAPI.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest("The form to edit the department has a malformed field.");
+                return StatusCode(500, "The form to edit the department has a malformed field.");
             }
         }
 
@@ -214,10 +221,10 @@ namespace EveryoneAPI.Controllers
         
         public async Task<IActionResult> DeleteConfirmed(int id, string uuid)
         {
-
+            // Perform a user check.
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of this request.");
+                return StatusCode(401, "The user could not be identified at the beginning of this request.");
             }
 
             if (_context.Departments == null)
@@ -225,6 +232,7 @@ namespace EveryoneAPI.Controllers
                 return Problem("Entity set 'EveryoneDBContext.Departments'  is null.");
             }
 
+            // Identify the department and user, check that the user owns the department.
             var department = await _context.Departments.FindAsync(id);
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
@@ -232,10 +240,11 @@ namespace EveryoneAPI.Controllers
             {
                 if (department.EmployerId == user.EmployerId)
                 {
-
+                    // Cascade delete all the pods and nullify the DepartmentId and PodId fields in the affected employees.
                     var departmentEmployees = _context.Employees.Where(e => e.DepartmentId == department.DepartmentId).ToList();
                     var pods = _context.Pods.Where(p => p.DepartmentId == department.DepartmentId).ToList();
 
+                    // Find each employee first and nullify their DepartmentId and PodId (addresses FK dependency).
                     foreach (var employee in departmentEmployees)
                     {
                         employee.PodId = null;
@@ -244,12 +253,14 @@ namespace EveryoneAPI.Controllers
                     }
                     await _context.SaveChangesAsync();
 
+                    // Remove all the pods belonging to the department.
                     foreach (var pod in pods)
                     {
                         _context.Remove(pod);
                     }
                     await _context.SaveChangesAsync();
 
+                    // Remove the department.
                     _context.Departments.Remove(department);
                     await _context.SaveChangesAsync();
                     return Ok("The department was successfully deleted.");
@@ -269,10 +280,10 @@ namespace EveryoneAPI.Controllers
         [Route("SortDepartment")]
         public async Task<IActionResult> SortDepartment(int departmentId, string uuid)
         {
-            // NUll check departmentId, uuid.
+            // Null check departmentId, uuid.
             if (departmentId == null|| uuid == null)
             {
-                return BadRequest("Please specify out the departmentId and uuid parameters.");
+                return BadRequest("Please specify the departmentId and uuid parameters.");
             }
 
             // Check department belongs to user.
@@ -367,12 +378,12 @@ namespace EveryoneAPI.Controllers
                         }
                     }
                 }
-
+                // Success, return status 200 indicating the employees were organized.
                 return Ok("All employees were successfully organized into their respective pods.");
             }
             else
             {
-                return BadRequest("The user specified does not have ownership over the specified department.");
+                return StatusCode(401, "The user specified does not have ownership over the specified department.");
             }
 
         }

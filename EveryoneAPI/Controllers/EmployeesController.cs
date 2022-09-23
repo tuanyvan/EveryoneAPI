@@ -29,14 +29,14 @@ namespace EveryoneAPI.Controllers
 
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of this request.");
+                return StatusCode(401, "The user could not be identified at the beginning of this request.");
             }
 
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
             if (user == null)
             {
-                return BadRequest("The user sending the request is invalid.");
+                return StatusCode(401, "The user sending the request is invalid.");
             }
 
             var json = Array.Empty<object>().ToList();
@@ -82,7 +82,7 @@ namespace EveryoneAPI.Controllers
 
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of this request.");
+                return StatusCode(401, "The user could not be identified at the beginning of this request.");
             }
 
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
@@ -132,14 +132,14 @@ namespace EveryoneAPI.Controllers
 
                 if (uuid == null)
                 {
-                    return BadRequest("The user could not be identified at the beginning of this request.");
+                    return StatusCode(401, "The user could not be identified at the beginning of this request.");
                 }
 
                 var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
                 if (user == null)
                 {
-                    return BadRequest("The user requesting the employee creation does not exist.");
+                    return StatusCode(401, "The user requesting the employee creation does not exist.");
                 }
 
                 Employee newEmployee = new Employee();
@@ -175,7 +175,7 @@ namespace EveryoneAPI.Controllers
 
                 if (uuid == null)
                 {
-                    return BadRequest("The user could not be identified at the beginning of this request.");
+                    return StatusCode(401, "The user could not be identified at the beginning of this request.");
                 }
 
                 Employer user = _context.Employers.Where(e => e.Uuid.Equals(uuid)).SingleOrDefault();
@@ -227,7 +227,7 @@ namespace EveryoneAPI.Controllers
 
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of this request.");
+                return StatusCode(401, "The user could not be identified at the beginning of this request.");
             }
 
             if (_context.Employees == null)

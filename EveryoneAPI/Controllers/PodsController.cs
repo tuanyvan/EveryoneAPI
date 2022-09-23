@@ -31,7 +31,7 @@ namespace EveryoneAPI.Controllers
 
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of the request.");
+                return StatusCode(401, "The user could not be identified at the beginning of the request.");
             }
 
             var department = _context.Departments.Where(d => d.DepartmentId == departmentId).SingleOrDefault();
@@ -43,12 +43,12 @@ namespace EveryoneAPI.Controllers
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
             if (user == null)
             {
-                return BadRequest("The user making the request is invalid.");
+                return StatusCode(401, "The user making the request is invalid.");
             }
 
             if (department.EmployerId != user.EmployerId)
             {
-                return BadRequest("The user requesting the department pod index does not have ownership over this department.");
+                return StatusCode(401, "The user requesting the department pod index does not have ownership over this department.");
             }
 
             var json = Array.Empty<object>().ToList();
@@ -83,7 +83,7 @@ namespace EveryoneAPI.Controllers
 
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of this request.");
+                return StatusCode(401, "The user could not be identified at the beginning of this request.");
             }
 
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
@@ -98,7 +98,7 @@ namespace EveryoneAPI.Controllers
 
             if (podDepartment.EmployerId != user.EmployerId)
             {
-                return BadRequest("The user does not have ownership over the specified pod.");
+                return StatusCode(401, "The user does not have ownership over the specified pod.");
             }
 
             var json = Array.Empty<object>().ToList();
@@ -142,14 +142,14 @@ namespace EveryoneAPI.Controllers
 
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of this request.");
+                return StatusCode(401, "The user could not be identified at the beginning of this request.");
             }
 
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
 
             if (user == null)
             {
-                return BadRequest("The user making the request is invalid.");
+                return StatusCode(401, "The user making the request is invalid.");
             }
 
             var department = _context.Departments.Where(d => d.DepartmentId == pod.DepartmentId).SingleOrDefault();
@@ -160,7 +160,7 @@ namespace EveryoneAPI.Controllers
             }
             if (department.EmployerId != user.EmployerId)
             {
-                return BadRequest("The user does not own the department where the pod is being created.");
+                return StatusCode(401, "The user does not own the department where the pod is being created.");
             }
 
             Pod newPod = new Pod();
@@ -184,14 +184,14 @@ namespace EveryoneAPI.Controllers
         {
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of this request.");
+                return StatusCode(401, "The user could not be identified at the beginning of this request.");
             }
 
             var user = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault();
             
             if (user == null)
             {
-                return BadRequest("The user making the pod edit request is invalid.");
+                return StatusCode(401, "The user making the pod edit request is invalid.");
             }
 
             var targetedPod = _context.Pods.Where(p => p.PodId == id).SingleOrDefault();
@@ -233,7 +233,7 @@ namespace EveryoneAPI.Controllers
         {
             if (uuid == null)
             {
-                return BadRequest("The user could not be identified at the beginning of the request.");
+                return StatusCode(401, "The user could not be identified at the beginning of the request.");
             }
 
             if (id == null)
