@@ -355,9 +355,9 @@ namespace EveryoneAPI.Controllers
                             foreach (var employee in remainingEmployees)
                             {
                                 int score = 0;
-                                if (existingGenders.Contains(employee.GenderIdentity)) score++;
-                                if (existingEthnicities.Contains(employee.Ethnicity)) score++;
-                                if (existingOrientation.Contains(employee.SexualOrientation)) score++;
+                                if (!existingGenders.Contains(employee.GenderIdentity)) score++;
+                                if (!existingEthnicities.Contains(employee.Ethnicity)) score++;
+                                if (!existingOrientation.Contains(employee.SexualOrientation)) score++;
                                 employeeScores.Add(score);
                             }
 
