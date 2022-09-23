@@ -154,6 +154,10 @@ namespace EveryoneAPI.Controllers
 
             var department = _context.Departments.Where(d => d.DepartmentId == pod.DepartmentId).SingleOrDefault();
 
+            if (department == null)
+            {
+                return BadRequest("The department which the pod is being created for does not exist.");
+            }
             if (department.EmployerId != user.EmployerId)
             {
                 return BadRequest("The user does not own the department where the pod is being created.");
