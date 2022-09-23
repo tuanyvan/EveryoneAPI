@@ -26,7 +26,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string uuid)
         {
-
+            // Perform a user check.
             if (uuid == null)
             {
                 return StatusCode(401, "The user could not be identified at the beginning of this request.");
@@ -39,6 +39,7 @@ namespace EveryoneAPI.Controllers
                 return StatusCode(401, "The user sending the request is invalid.");
             }
 
+            // Return a list of employees belonging to the user.
             var json = Array.Empty<object>().ToList();
 
             var employees = _context.Employees.Where(e => e.EmployerId == user.EmployerId).ToList();
@@ -74,7 +75,7 @@ namespace EveryoneAPI.Controllers
         [Route("Details")]
         public async Task<IActionResult> Details(int id, string uuid)
         {
-
+            // Perform an id and user check.
             if (id == null)
             {
                 return NotFound("The provided parameters are missing: id");
@@ -92,6 +93,7 @@ namespace EveryoneAPI.Controllers
                 return BadRequest("An invalid user has sent the request.");
             }
 
+            // Find the employee that belongs to the user.
             var employee = _context.Employees.Where(e => e.EmployeeId == id && e.EmployerId == user.EmployerId).SingleOrDefault();
 
             if (employee == null)
@@ -99,6 +101,7 @@ namespace EveryoneAPI.Controllers
                 return NotFound("The employee requested was not found.");
             }
 
+            // In repsonse payload, include department name and pod name for front-end convenience.
             var departmentName = _context.Departments.Where(d => d.DepartmentId == employee.DepartmentId).SingleOrDefault();
             var podName = _context.Pods.Where(p => p.PodId == employee.PodId).SingleOrDefault();
 
@@ -129,7 +132,7 @@ namespace EveryoneAPI.Controllers
         {
             try
             {
-
+                // Perform a user check.
                 if (uuid == null)
                 {
                     return StatusCode(401, "The user could not be identified at the beginning of this request.");
@@ -142,6 +145,7 @@ namespace EveryoneAPI.Controllers
                     return StatusCode(401, "The user requesting the employee creation does not exist.");
                 }
 
+                // Create a new employee and populate the fields using EmployeeFormModel.
                 Employee newEmployee = new Employee();
                 newEmployee.Name = employee.Name;
                 newEmployee.GenderIdentity = employee.GenderIdentity;
@@ -172,7 +176,7 @@ namespace EveryoneAPI.Controllers
         {
             try
             {
-
+                // Perform a user check.
                 if (uuid == null)
                 {
                     return StatusCode(401, "The user could not be identified at the beginning of this request.");
@@ -182,11 +186,12 @@ namespace EveryoneAPI.Controllers
 
                 if (user != null)
                 {
-
+                    // Check the selected employee belongs to the user.
                     Employee selectedEmployee = _context.Employees.Where(e => e.EmployeeId == id && e.EmployerId == user.EmployerId).SingleOrDefault();
                     
                     if (selectedEmployee != null)
                     {
+                        // Repopulate all employee fields using EmployeeEditModel.
                         selectedEmployee.Name = employee.Name;
                         selectedEmployee.GenderIdentity = employee.GenderIdentity;
                         selectedEmployee.SexualOrientation = employee.SexualOrientation;
@@ -201,14 +206,13 @@ namespace EveryoneAPI.Controllers
 
                     else
                     {
-                        return BadRequest("The requested employee for edit could not be found.");
+                        return BadRequest("The requested employee for editing could not be found.");
                     }
 
                 }
-
                 else
                 {
-                    return BadRequest("Request was made from an invalid user.");
+                    return StatusCode(401, "Request was made from an invalid user.");
                 }
             }
             catch (Exception e)
@@ -224,7 +228,7 @@ namespace EveryoneAPI.Controllers
 
         public async Task<IActionResult> DeleteConfirmed(int id, string uuid)
         {
-
+            // Perform a user check.
             if (uuid == null)
             {
                 return StatusCode(401, "The user could not be identified at the beginning of this request.");
@@ -240,6 +244,7 @@ namespace EveryoneAPI.Controllers
 
             if (employee != null && user != null)
             {
+                // Remove the employee if it belongs to the user.
                 if (user.EmployerId == employee.EmployerId)
                 {
                     _context.Employees.Remove(employee);

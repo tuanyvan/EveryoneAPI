@@ -81,7 +81,7 @@ namespace EveryoneAPI.Controllers
 
                 foreach (var employee in departmentEmployees)
                 {
-                    // Add departmentName and podName to response payload for front-end convenience.
+                    // Add department name and pod name to response payload for front-end convenience.
                     var departmentName = _context.Departments.Where(d => d.DepartmentId == employee.DepartmentId).SingleOrDefault();
                     var podName = _context.Pods.Where(p => p.PodId == employee.PodId).SingleOrDefault();
 
