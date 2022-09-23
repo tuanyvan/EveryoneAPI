@@ -28,12 +28,13 @@ namespace EveryoneAPI.Controllers
         [Route("List")]
         public async Task<IActionResult> Index(int departmentId, string uuid)
         {
-
+            // Perform a user check.
             if (uuid == null)
             {
                 return StatusCode(401, "The user could not be identified at the beginning of the request.");
             }
 
+            // Verify that the department and user exist.
             var department = _context.Departments.Where(d => d.DepartmentId == departmentId).SingleOrDefault();
             if (department == null)
             {
@@ -46,11 +47,13 @@ namespace EveryoneAPI.Controllers
                 return StatusCode(401, "The user making the request is invalid.");
             }
 
+            // Only allow the user to proceed if the department belongs to them.
             if (department.EmployerId != user.EmployerId)
             {
                 return StatusCode(401, "The user requesting the department pod index does not have ownership over this department.");
             }
 
+            // Return a list of pods that belong to the user's specified department.
             var json = Array.Empty<object>().ToList();
             var departmentPods = _context.Pods.Where(p => p.DepartmentId == department.DepartmentId).ToList();
 
@@ -68,14 +71,12 @@ namespace EveryoneAPI.Controllers
             return Json(json);
         }
 
-        /**
-         * Get list of employees belonging to the pod.
-         */
         // GET: Pods/Details/5
         [HttpGet]
         [Route("Details")]
         public async Task<IActionResult> Details(int id, string uuid)
         {
+            // Perform an id and user check.
             if (id == null || _context.Pods == null)
             {
                 return NotFound("The specified pod could not be found because the id supplied is null.");
@@ -94,6 +95,7 @@ namespace EveryoneAPI.Controllers
                 return BadRequest("The requested pod could not be found as its id does not match any existing pods.");
             }
 
+            // If the pod exists, verify that the pod's department belongs to the user.
             var podDepartment = _context.Departments.Where(d => d.DepartmentId == pod.DepartmentId).SingleOrDefault();
 
             if (podDepartment.EmployerId != user.EmployerId)
@@ -101,6 +103,7 @@ namespace EveryoneAPI.Controllers
                 return StatusCode(401, "The user does not have ownership over the specified pod.");
             }
 
+            // Return a list of employees belonging to the requested pod.
             var json = Array.Empty<object>().ToList();
             var podEmployees = _context.Employees.Where(e => e.PodId == pod.PodId).ToList();
 
@@ -139,7 +142,7 @@ namespace EveryoneAPI.Controllers
         
         public async Task<IActionResult> Create(string uuid, [FromBody] PodFormModel pod)
         {
-
+            // Perform a user check.
             if (uuid == null)
             {
                 return StatusCode(401, "The user could not be identified at the beginning of this request.");
@@ -152,6 +155,7 @@ namespace EveryoneAPI.Controllers
                 return StatusCode(401, "The user making the request is invalid.");
             }
 
+            // Verify that the department exists and belongs to the user.
             var department = _context.Departments.Where(d => d.DepartmentId == pod.DepartmentId).SingleOrDefault();
 
             if (department == null)
@@ -163,6 +167,7 @@ namespace EveryoneAPI.Controllers
                 return StatusCode(401, "The user does not own the department where the pod is being created.");
             }
 
+            // Create the new pod.
             Pod newPod = new Pod();
 
             newPod.Name = pod.Name;
@@ -182,6 +187,7 @@ namespace EveryoneAPI.Controllers
         
         public async Task<IActionResult> Edit(int id, string uuid, [FromBody] PodEditModel pod)
         {
+            // Perform a user check.
             if (uuid == null)
             {
                 return StatusCode(401, "The user could not be identified at the beginning of this request.");
@@ -194,6 +200,7 @@ namespace EveryoneAPI.Controllers
                 return StatusCode(401, "The user making the pod edit request is invalid.");
             }
 
+            // Verify the requested pod exists.
             var targetedPod = _context.Pods.Where(p => p.PodId == id).SingleOrDefault();
 
             if (targetedPod == null)
@@ -231,6 +238,7 @@ namespace EveryoneAPI.Controllers
         
         public async Task<IActionResult> DeleteConfirmed(int id, string uuid)
         {
+            // Perform a user check.
             if (uuid == null)
             {
                 return StatusCode(401, "The user could not be identified at the beginning of the request.");
@@ -246,6 +254,7 @@ namespace EveryoneAPI.Controllers
                 return Problem("Entity set 'EveryoneDBContext.Pods'  is null.");
             }
 
+            // Find the pod requested for deletion.
             var pod = await _context.Pods.FindAsync(id);
 
             if (pod == null)
@@ -263,8 +272,7 @@ namespace EveryoneAPI.Controllers
 
             if (pod != null)
             {
-
-                // Cascade null employee PodId fields belonging to the pod.
+                // Cascade null all employee PodId fields belonging to the pod.
                 var podEmployees = _context.Employees.Where(e => e.PodId == pod.PodId).ToList();
 
                 foreach (var employee in podEmployees)
