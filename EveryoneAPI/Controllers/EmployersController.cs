@@ -113,25 +113,6 @@ namespace EveryoneAPI.Controllers
             return Ok(user.Uuid);
         }
 
-        // POST: Employers/Delete/5
-        [HttpDelete]
-        [Route("Delete")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            if (_context.Employers == null)
-            {
-                return Problem("Entity set 'EveryoneDBContext.Employers'  is null.");
-            }
-            var employer = await _context.Employers.FindAsync(id);
-            if (employer != null)
-            {
-                _context.Employers.Remove(employer);
-            }
-            
-            await _context.SaveChangesAsync();
-            return Ok("User deleted");
-        }
-
         private bool EmployerExists(int id)
         {
           return _context.Employers.Any(e => e.EmployerId == id);
