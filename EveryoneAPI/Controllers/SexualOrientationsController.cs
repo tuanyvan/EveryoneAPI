@@ -23,6 +23,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            // Return a list of sexual orientations.
             var json = Array.Empty<object>().ToList();
 
             var orientations = _context.SexualOrientations.ToList();

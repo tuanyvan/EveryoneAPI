@@ -23,6 +23,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            // Return a list of gender identities.
             var json = Array.Empty<object>().ToList();
 
             var genderIdentities = _context.GenderIdentities.ToList();

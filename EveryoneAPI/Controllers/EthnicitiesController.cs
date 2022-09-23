@@ -23,6 +23,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            // Return a list of ethnicities.
             var json = Array.Empty<object>().ToList();
 
             var ethnicities = _context.Ethnicities.ToList();

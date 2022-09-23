@@ -23,6 +23,7 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            // Return a list of pronouns.
             var json = Array.Empty<object>().ToList();
 
             var pronouns = _context.Pronouns.ToList();
