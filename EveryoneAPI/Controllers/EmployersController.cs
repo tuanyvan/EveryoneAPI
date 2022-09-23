@@ -27,21 +27,15 @@ namespace EveryoneAPI.Controllers
         // GET: Employers/Details/5
         [HttpGet]
         [Route("Details")]
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(string uuid)
         {
-            if (id == null || _context.Employers == null)
+            // Only return an email.
+            string email = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault().Email;
+            if (email == null)
             {
-                return NotFound();
+                return StatusCode(401, "The user making the request is invalid.");
             }
-
-            var employer = await _context.Employers
-                .FirstOrDefaultAsync(m => m.EmployerId == id);
-            if (employer == null)
-            {
-                return NotFound();
-            }
-
-            return Json(employer);
+            return Ok(email);
         }
 
         // POST: Employers/Register
@@ -49,12 +43,13 @@ namespace EveryoneAPI.Controllers
         [Route("Register")]
         public async Task<IActionResult> Register([FromBody] EmployerInfo employerInfo)
         {
-
+            // Check that the email and password fields are not empty.
             if (string.IsNullOrEmpty(employerInfo.Email) || string.IsNullOrEmpty(employerInfo.Password))
             {
                 return BadRequest("The email and password field cannot be empty.");
             }
 
+            // Check if the email is already being used.
             foreach (Employer e in _context.Employers.ToList())
             {
                 if (e.Email == employerInfo.Email)
@@ -63,6 +58,7 @@ namespace EveryoneAPI.Controllers
                 }
             }
 
+            // Create the new employer with an email and hashed password.
             Employer employer = new Employer();
             employer.Email = employerInfo.Email;
 
@@ -72,6 +68,7 @@ namespace EveryoneAPI.Controllers
                 employer.Password = password.ToString();
             }
 
+            // Token will be different on login.
             employer.Uuid = Guid.NewGuid().ToString();
 
             _context.Add(employer);
@@ -85,12 +82,13 @@ namespace EveryoneAPI.Controllers
         [Route("Login")]
         public async Task<IActionResult> Login([FromBody] EmployerInfo employerInfo)
         {
-
+            // Check that the email and password fields are filled out.
             if (string.IsNullOrEmpty(employerInfo.Email) || string.IsNullOrEmpty(employerInfo.Password))
             {
                 return BadRequest("The email and password must be filled out.");
             }
 
+            // Hash the request password.
             string hashedPassword;
 
             using (var sha256 = SHA256.Create())
@@ -98,6 +96,7 @@ namespace EveryoneAPI.Controllers
                 hashedPassword = Convert.ToBase64String(sha256.ComputeHash(Encoding.Default.GetBytes(employerInfo.Password)));
             }
 
+            // Check that the request password hash and email match what is on record.
             Employer user = _context.Employers.Where(e => e.Email.Equals(employerInfo.Email) && e.Password.Equals(hashedPassword)).SingleOrDefault();
 
             if (user == null)
@@ -105,6 +104,7 @@ namespace EveryoneAPI.Controllers
                 return BadRequest("There was no user found with those credentials.");
             }
 
+            // Update the user's token and send it to them in the response payload.
             user.Uuid = Guid.NewGuid().ToString();
 
             _context.Update(user);
