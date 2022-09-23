@@ -23,12 +23,25 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-              return Json(await _context.SexualOrientations.ToListAsync());
+            var json = Array.Empty<object>().ToList();
+
+            var orientations = _context.SexualOrientations.ToList();
+
+            foreach (var orientation in orientations)
+            {
+                json.Add(new
+                {
+                    OrientationId = orientation.OrientationId,
+                    Name = orientation.Name
+                });
+            }
+
+            return Json(json);
         }
-        
+
         private bool SexualOrientationExists(int id)
         {
-          return _context.SexualOrientations.Any(e => e.OrientationId == id);
+            return _context.SexualOrientations.Any(e => e.OrientationId == id);
         }
     }
 }

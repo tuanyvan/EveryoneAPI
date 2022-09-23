@@ -23,12 +23,25 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-              return Json(await _context.Ethnicities.ToListAsync());
+            var json = Array.Empty<object>().ToList();
+
+            var ethnicities = _context.Ethnicities.ToList();
+            
+            foreach (var ethnicity in ethnicities)
+            {
+                json.Add(new
+                {
+                    EthnicityId = ethnicity.EthnicityId,
+                    Name = ethnicity.Name
+                });
+            }
+
+            return Json(json);
         }
 
         private bool EthnicityExists(int id)
         {
-          return _context.Ethnicities.Any(e => e.EthnicityId == id);
+            return _context.Ethnicities.Any(e => e.EthnicityId == id);
         }
     }
 }

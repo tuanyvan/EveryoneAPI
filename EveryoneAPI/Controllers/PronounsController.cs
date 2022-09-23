@@ -23,12 +23,25 @@ namespace EveryoneAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-              return Json(await _context.Pronouns.ToListAsync());
+            var json = Array.Empty<object>().ToList();
+
+            var pronouns = _context.Pronouns.ToList();
+
+            foreach (var pronoun in pronouns)
+            {
+                json.Add(new
+                {
+                    PronounId = pronoun.PronounId,
+                    Name = pronoun.Name
+                });
+            }
+
+            return Json(json);
         }
 
         private bool PronounExists(int id)
         {
-          return _context.Pronouns.Any(e => e.PronounId == id);
+            return _context.Pronouns.Any(e => e.PronounId == id);
         }
     }
 }
