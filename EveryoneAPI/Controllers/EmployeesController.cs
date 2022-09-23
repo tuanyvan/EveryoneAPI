@@ -159,7 +159,7 @@ namespace EveryoneAPI.Controllers
             }
             catch (Exception e)
             {
-                throw new Exception(e.Message);
+                return BadRequest("There was an error with the creation of the employee.");
             }
         }
 
