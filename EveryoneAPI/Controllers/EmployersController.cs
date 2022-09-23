@@ -30,7 +30,7 @@ namespace EveryoneAPI.Controllers
         public async Task<IActionResult> Details(string uuid)
         {
             // Only return an email.
-            string email = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault().Email;
+            string email = _context.Employers.Where(e => e.Uuid == uuid).SingleOrDefault().Email.ToLower();
             if (email == null)
             {
                 return StatusCode(401, "The user making the request is invalid.");
@@ -44,7 +44,7 @@ namespace EveryoneAPI.Controllers
         public async Task<IActionResult> Register([FromBody] EmployerInfo employerInfo)
         {
             // Check that the email and password fields are not empty.
-            if (string.IsNullOrEmpty(employerInfo.Email) || string.IsNullOrEmpty(employerInfo.Password))
+            if (string.IsNullOrEmpty(employerInfo.Email.ToLower()) || string.IsNullOrEmpty(employerInfo.Password))
             {
                 return BadRequest("The email and password field cannot be empty.");
             }
@@ -52,7 +52,7 @@ namespace EveryoneAPI.Controllers
             // Check if the email is already being used.
             foreach (Employer e in _context.Employers.ToList())
             {
-                if (e.Email == employerInfo.Email)
+                if (e.Email.ToLower() == employerInfo.Email.ToLower())
                 {
                     return BadRequest("That email already exists.");
                 }
@@ -60,7 +60,7 @@ namespace EveryoneAPI.Controllers
 
             // Create the new employer with an email and hashed password.
             Employer employer = new Employer();
-            employer.Email = employerInfo.Email;
+            employer.Email = employerInfo.Email.ToLower();
 
             using (var sha256 = SHA256.Create())
             {
@@ -83,7 +83,7 @@ namespace EveryoneAPI.Controllers
         public async Task<IActionResult> Login([FromBody] EmployerInfo employerInfo)
         {
             // Check that the email and password fields are filled out.
-            if (string.IsNullOrEmpty(employerInfo.Email) || string.IsNullOrEmpty(employerInfo.Password))
+            if (string.IsNullOrEmpty(employerInfo.Email.ToLower()) || string.IsNullOrEmpty(employerInfo.Password))
             {
                 return BadRequest("The email and password must be filled out.");
             }
@@ -97,7 +97,7 @@ namespace EveryoneAPI.Controllers
             }
 
             // Check that the request password hash and email match what is on record.
-            Employer user = _context.Employers.Where(e => e.Email.Equals(employerInfo.Email) && e.Password.Equals(hashedPassword)).SingleOrDefault();
+            Employer user = _context.Employers.Where(e => e.Email.ToLower().Equals(employerInfo.Email.ToLower()) && e.Password.Equals(hashedPassword)).SingleOrDefault();
 
             if (user == null)
             {
