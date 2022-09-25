@@ -7,10 +7,12 @@ namespace EveryoneAPI.Models
 {
     public partial class EveryoneDBContext : DbContext
     {
-        public EveryoneDBContext()
-        {
-        }
+        private IConfigurationRoot Configuration;
 
+        public EveryoneDBContext(IConfiguration configuration)
+        {
+            Configuration = (IConfigurationRoot)configuration;
+        }
         public EveryoneDBContext(DbContextOptions<EveryoneDBContext> options)
             : base(options)
         {
@@ -29,8 +31,7 @@ namespace EveryoneAPI.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Data Source=tcp:everyone-sql-db.database.windows.net,1433;Initial Catalog=EveryoneDB;User Id=everyonedb@everyone-sql-db;Password=kMj5cRqLEXKDnHb");
+                optionsBuilder.UseSqlServer(Configuration["ConnectionStrings:EveryoneDb"]);
             }
         }
 
